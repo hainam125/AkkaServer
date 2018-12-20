@@ -1,5 +1,6 @@
 package controllers;
 
+import actors.RoomActor;
 import actors.WebSocketActor;
 import akka.actor.ActorRef;
 import akka.actor.ActorSystem;
@@ -7,6 +8,8 @@ import akka.stream.Materializer;
 import messages.Login;
 import models.User;
 import models.UserRef;
+import play.data.DynamicForm;
+import play.data.Form;
 import play.libs.streams.ActorFlow;
 import play.mvc.Controller;
 import play.mvc.Result;
@@ -30,8 +33,12 @@ public class HomeController extends Controller {
     }
 
     public Result index() {
-        String url = routes.HomeController.ws().webSocketURL(request());
-        return ok(views.html.index.render(url));
+        return ok(views.html.index.render(RoomActor.tick));
+    }
+
+    public Result tick() {
+        RoomActor.tick = Integer.parseInt(request().body().asFormUrlEncoded().get("tick")[0]);
+        return redirect(controllers.routes.HomeController.index());
     }
 
     public WebSocket ws() {

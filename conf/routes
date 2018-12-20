@@ -1,5 +1,6 @@
 # An example controller showing how to use dependency injection
 GET         /               controllers.HomeController.index
+POST        /tick           controllers.HomeController.tick()
 GET         /ws             controllers.HomeController.ws
 
 # Map static resources from the /public folder to the /assets URL path

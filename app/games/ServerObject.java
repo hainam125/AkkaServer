@@ -7,7 +7,7 @@ import java.util.Queue;
 
 public class ServerObject {
     private static long currentId = 1;
-    private static Vector3 RotateSpeed = new Vector3(0, 100f, 0);
+    private static Vector3 RotateSpeed = new Vector3(0, 100f, 0).mul((float)(Math.PI / 180));
     private final float Speed = 7f;
     private static float deltaTime = 1f / 30f;
     private long id;
@@ -52,6 +52,9 @@ public class ServerObject {
                 break;
             case 3:
                 position = position.subtract(Vector3.right.mul(Speed * deltaTime));
+                break;
+            case 4:
+                rotation = rotation.add(RotateSpeed.mul(deltaTime));
                 break;
         }
         //System.out.println(position);

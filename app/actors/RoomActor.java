@@ -21,7 +21,7 @@ import java.time.Duration;
 import java.util.*;
 
 public class RoomActor extends AbstractActor {
-    private static final int tick = 15;
+    public static int tick = 15;
     private Map<Long, ActorRef > websockets;
     private final ActorRef lobbyActor;
     private Map<UserRef, Long> commandsSoFar;
