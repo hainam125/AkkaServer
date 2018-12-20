@@ -1,0 +1,89 @@
+@(url: String)
+
+@main("Welcome to Chat") {
+    <div class="row fill">
+        <div>
+            <h1>Chat Room</h1>
+        </div>
+        <div class="col-xs-8 col-sm-9 fill">
+            <div>
+                <ul id="messages" class="list-unstyled">
+                </ul>
+            </div>
+
+            <div class="footer">
+                <div class="col-xs-8 col-sm-9">
+                    <input id="message" class="form-control" placeholder="Message" type="text" autofocus/>
+                </div>
+                <div class="col-xs-4 col-sm-3">
+                    <button id="send" type="submit"class="form-control">Send</button>
+                </div>
+            </div>
+        </div>
+        <div class="col-xs-4 col-sm-3">
+            <div>
+                <h2>Room List</h2>
+            </div>
+            <div>
+                <ul id="rooms" class="list-unstyled">
+                </ul>
+            </div>
+
+            <div>
+                <div>
+                    <input id="room" class="form-control" placeholder="Room roomName" type="text" autofocus/>
+                </div>
+                <div>
+                    <button id="new-room" type="submit"class="form-control btn btn-default">Create Room</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script language="javascript">
+        var $messages   = $("#messages");
+        var $message    = $("#message");
+        var $send       = $("#send");
+        var $rooms      = $("#rooms");
+        var $room       = $("#room");
+        var $newRoom    = $("#new-room");
+        var connection  = new WebSocket("@url");
+        var currentRoom = "";
+        var newRoomCmd  = "CreateRoomCmd";
+        var joinRoomCmd = "JoinRoomCmd";
+        var chatCmd     = "Chat";
+
+        $send.prop("disabled", true);
+        var sendMessage = function () {
+            var text = $message.val();
+            if(text == "") return;
+            $message.val("");
+            connection.send(chatCmd + "-" + currentRoom + "-" + text);
+        };
+
+        var sendNewRoomCmd = function () {
+            var roomName = $room.val();
+            if(roomName == "") return;
+            $room.val("");
+            connection.send(newRoomCmd + "-" + roomName);
+        };
+
+        connection.onopen = function () {
+            $send.prop("disabled", false);
+            $messages.append($("<li class='bg-info' style='font-size: 1.5em'>Connected</li>"));
+            $send.on("click", sendMessage);
+            $newRoom.on("click", sendNewRoomCmd);
+            $message.keypress(function (event) {
+                if(event.keyCode == '13') sendMessage();
+            });
+        };
+
+        connection.onerror = function (err) {
+            console.log("WebSocket Error ", err);
+        };
+
+        connection.onmessage = function (event) {
+            $messages.append($("<li style='font-size: 1.5em'>" + event.data + "</li>"));
+        };
+    </script>
+}
