@@ -4,6 +4,7 @@ import akka.actor.AbstractActor;
 import akka.actor.ActorRef;
 import data.Response;
 import data.RoomList;
+import models.CreateRoom;
 import models.UserRef;
 import messages.*;
 import play.libs.Json;
@@ -29,10 +30,17 @@ public class LobbyActor extends AbstractActor {
             websockets.put(userRef.getUser().getId(), userRef);
         }).match(NewRoom.class, data -> {
             String roomName = data.getRoomName();
-            ActorRef roomActorRef = getContext().actorOf(RoomActor.props(self()), roomName);
             UserRef userRef = websockets.get(data.getUserId());
-            rooms.put(roomName, roomActorRef);
-            self().tell(new JoinRoom(userRef, roomName, data.getRequestId(), true), ActorRef.noSender());
+            if(rooms.containsKey(roomName)) {
+                Response response = new Response(data.getRequestId(), Json.toJson(new CreateRoom("", -1, false)).toString(), CreateRoom.class.getSimpleName());
+                userRef.getOut().tell(Json.toJson(response), ActorRef.noSender());
+
+            }
+            else {
+                ActorRef roomActorRef = getContext().actorOf(RoomActor.props(self()), roomName);
+                rooms.put(roomName, roomActorRef);
+                self().tell(new JoinRoom(userRef, roomName, data.getRequestId(), true), ActorRef.noSender());
+            }
         }).match(GetRooms.class, data -> {
             UserRef userRef = websockets.get(data.getUserId());
             Response response = new Response(data.getRequestId(), Json.toJson(new RoomList(rooms.keySet())).toString(), RoomList.class.getSimpleName());

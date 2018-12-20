@@ -58,13 +58,13 @@ public class RoomActor extends AbstractActor {
         return receiveBuilder().match(JoinRoom.class, data -> {
             UserRef userRef = data.getUserRef();
             long userId = userRef.getUser().getId();
-            websockets.put(userId, data.getUserRef().getOut());
+            websockets.put(userId, userRef.getOut());
 
             ServerObject serverObject = new ServerObject();
             userRef.setServerObject(serverObject);
 
             if(data.isCreated()){
-                Response response = new Response(data.getRequestId(), Json.toJson(new CreateRoom(data.getRoom(), serverObject.getId())).toString(), CreateRoom.class.getSimpleName());
+                Response response = new Response(data.getRequestId(), Json.toJson(new CreateRoom(data.getRoom(), serverObject.getId(), true)).toString(), CreateRoom.class.getSimpleName());
                 userRef.getOut().tell(Json.toJson(response), ActorRef.noSender());
             }
             else {
@@ -73,7 +73,14 @@ public class RoomActor extends AbstractActor {
 
                 SnapShot snapShot = currentRoomStatus();
                 String snapShotString = Json.toJson(snapShot).toString();
-                Response response = new Response(data.getRequestId(), Json.toJson(new EnterRoom(data.getRoom(), serverObject.getId(), snapShotString)).toString(), EnterRoom.class.getSimpleName());
+                List<Long> ids = new ArrayList<>();
+                List<String> usernames = new ArrayList<>();
+                for (Map.Entry<UserRef, ServerObject> entry : objectMap.entrySet())
+                {
+                    usernames.add(entry.getKey().getUser().getUsername());
+                    ids.add(entry.getValue().getId());
+                }
+                Response response = new Response(data.getRequestId(), Json.toJson(new EnterRoom(data.getRoom(), serverObject.getId(), snapShotString, ids, usernames)).toString(), EnterRoom.class.getSimpleName());
                 userRef.getOut().tell(Json.toJson(response), ActorRef.noSender());
             }
 
@@ -136,11 +143,12 @@ public class RoomActor extends AbstractActor {
 
     private class GameLoop implements Runnable {
         public void run() {
-            for (int i = 0; i < objects.size(); i++) {
-                objects.get(i).UpdateGame();
-            }
+            Iterator<ServerObject> iter = objects.iterator();
             ArrayList<ExistingEntity> syncEntities = new ArrayList<>();
-            for (ServerObject object : objects) {
+
+            while (iter.hasNext()) {
+                ServerObject object = iter.next();
+                object.UpdateGame();
                 if (object.isDirty) {
                     ExistingEntity entity = new ExistingEntity(
                             object.getId(),
@@ -151,6 +159,7 @@ public class RoomActor extends AbstractActor {
                     object.isDirty = false;
                 }
             }
+
             SnapShot snapShot = new SnapShot();
             snapShot.existingEntities = syncEntities;
             for (Map.Entry<UserRef, Long> entry : commandsSoFar.entrySet()) {
