@@ -20,6 +20,13 @@ public class ServerObject {
         id = currentId;
         currentId++;
     }
+
+    private Vector3 getForward(){
+        Matrix3x3 matrix = Matrix3x3.getIdentity();
+        matrix.RotateY(rotation.toVector3Rad().y);
+        return matrix.TransformY(Vector3.forward);
+    }
+
     public long getId() {
         return id;
     }
@@ -42,19 +49,16 @@ public class ServerObject {
         switch (command.keyCode)
         {
             case 0:
-                position = position.add(Vector3.forward.mul(Speed * deltaTime));
+                position = position.add(getForward().mul(Speed * deltaTime));
                 break;
             case 1:
-                position = position.subtract(Vector3.forward.mul(Speed * deltaTime));
+                position = position.subtract(getForward().mul(Speed * deltaTime));
                 break;
             case 2:
-                position = position.add(Vector3.right.mul(Speed * deltaTime));
+                rotation = rotation.add(RotateSpeed.mul(deltaTime));
                 break;
             case 3:
-                position = position.subtract(Vector3.right.mul(Speed * deltaTime));
-                break;
-            case 4:
-                rotation = rotation.add(RotateSpeed.mul(deltaTime));
+                rotation = rotation.add(RotateSpeed.mul(-deltaTime));
                 break;
         }
         //System.out.println(position);
