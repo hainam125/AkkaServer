@@ -6,7 +6,7 @@ import akka.actor.Cancellable;
 import akka.actor.Props;
 import com.fasterxml.jackson.databind.JsonNode;
 import data.*;
-import games.ServerObject;
+import games.*;
 import messages.*;
 import models.CreateRoom;
 import models.User;
@@ -26,7 +26,7 @@ public class RoomActor extends AbstractActor {
     private final ActorRef lobbyActor;
     private Map<UserRef, Long> commandsSoFar;
     private Map<UserRef, ServerObject> objectMap;
-    private List<ServerObject> objects;
+    private GameMap gameMap;
     private Cancellable gameLoop;
 
     public static Props props(ActorRef lobbyActor) {
@@ -38,7 +38,7 @@ public class RoomActor extends AbstractActor {
         websockets = new HashMap<>();
         commandsSoFar = new HashMap<>();
         objectMap = new HashMap<>();
-        objects = new ArrayList<>();
+        gameMap = new GameMap();
     }
 
     @Override
@@ -63,16 +63,17 @@ public class RoomActor extends AbstractActor {
             ServerObject serverObject = new ServerObject();
             userRef.setServerObject(serverObject);
 
+            SnapShot snapShot = currentRoomStatus();
+            String snapShotString = Json.toJson(snapShot).toString();
+
             if(data.isCreated()){
-                Response response = new Response(data.getRequestId(), Json.toJson(new CreateRoom(data.getRoom(), serverObject.getId(), true)).toString(), CreateRoom.class.getSimpleName());
+                Response response = new Response(data.getRequestId(), Json.toJson(new CreateRoom(data.getRoom(), serverObject.getId(), snapShotString, true)).toString(), CreateRoom.class.getSimpleName());
                 userRef.getOut().tell(Json.toJson(response), ActorRef.noSender());
             }
             else {
                 Response broadcastResponse = new Response(-1, Json.toJson(new UserJoined(userRef.getUser(), serverObject.getId())).toString(), UserJoined.class.getSimpleName());
                 broadcast(Json.toJson(broadcastResponse), userId);
 
-                SnapShot snapShot = currentRoomStatus();
-                String snapShotString = Json.toJson(snapShot).toString();
                 List<Long> ids = new ArrayList<>();
                 List<String> usernames = new ArrayList<>();
                 for (Map.Entry<UserRef, ServerObject> entry : objectMap.entrySet())
@@ -84,7 +85,7 @@ public class RoomActor extends AbstractActor {
                 userRef.getOut().tell(Json.toJson(response), ActorRef.noSender());
             }
 
-            objects.add(serverObject);
+            gameMap.objects.add(serverObject);
             commandsSoFar.put(userRef, 0L);
             objectMap.put(userRef, serverObject);
         }).match(Send.class, data -> {
@@ -100,17 +101,10 @@ public class RoomActor extends AbstractActor {
             commandsSoFar.remove(userRef);
             ServerObject serverObject = objectMap.get(userRef);
             objectMap.remove(userRef);
-            objects.remove(serverObject);
+            gameMap.objects.remove(serverObject);
             websockets.remove(userId);
             if(websockets.size() == 0) lobbyActor.tell(new RoomStatus(websockets.size()), getSelf());
         }).build();
-    }
-
-    private void send(JsonNode res) {
-        for (Map.Entry<Long, ActorRef> entry : websockets.entrySet())
-        {
-            entry.getValue().tell(res, ActorRef.noSender());
-        }
     }
 
     private void broadcast(JsonNode res, long user) {
@@ -121,18 +115,29 @@ public class RoomActor extends AbstractActor {
     }
 
     private void receiveCommand(UserRef userRef, Command command){
-        userRef.getServerObject().ReceiveCommand(command);
+        userRef.getServerObject().receiveCommand(command);
         commandsSoFar.put(userRef, command.id);
     }
 
     private SnapShot currentRoomStatus(){
         ArrayList<NewEntity> syncEntities = new ArrayList<>();
-        for(ServerObject object : objects){
+        for(ServerObject object : gameMap.objects){
             NewEntity entity = new NewEntity(
                     object.getId(),
-                    0,
-                    Optimazation.CompressRot(object.rotation),
-                    Optimazation.CompressPos2(object.position)
+                    ServerObject.PrefabId,
+                    object.transform.rotation,
+                    object.transform.position,
+                    object.transform.bound
+            );
+            syncEntities.add(entity);
+        }
+        for(Obstacle object : gameMap.obstacles){
+            NewEntity entity = new NewEntity(
+                    Obstacle.Id,
+                    Obstacle.PrefabId,
+                    object.transform.rotation,
+                    object.transform.position,
+                    object.transform.bound
             );
             syncEntities.add(entity);
         }
@@ -143,17 +148,17 @@ public class RoomActor extends AbstractActor {
 
     private class GameLoop implements Runnable {
         public void run() {
-            Iterator<ServerObject> iter = objects.iterator();
+            Iterator<ServerObject> iter = gameMap.objects.iterator();
             ArrayList<ExistingEntity> syncEntities = new ArrayList<>();
 
             while (iter.hasNext()) {
                 ServerObject object = iter.next();
-                object.UpdateGame();
+                object.updateGame(gameMap);
                 if (object.isDirty) {
                     ExistingEntity entity = new ExistingEntity(
                             object.getId(),
-                            Optimazation.CompressRot(object.rotation),
-                            Optimazation.CompressPos2(object.position)
+                            Optimazation.CompressRot(object.transform.rotation),
+                            Optimazation.CompressPos2(object.transform.position)
                     );
                     syncEntities.add(entity);
                     object.isDirty = false;

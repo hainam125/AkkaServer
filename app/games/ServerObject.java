@@ -6,6 +6,7 @@ import java.util.LinkedList;
 import java.util.Queue;
 
 public class ServerObject {
+    public static final int PrefabId = 0;
     private static long currentId = 1;
     private static Vector3 RotateSpeed = new Vector3(0, 100f, 0).mul((float)(Math.PI / 180));
     private final float Speed = 7f;
@@ -13,8 +14,7 @@ public class ServerObject {
     private long id;
     private Queue<Command> commands = new LinkedList<>();
     public boolean isDirty = true;
-    public Vector3 position = Vector3.zero;
-    public Quaternion rotation = Quaternion.zero;
+    public Transform transform = new Transform();
 
     public ServerObject(){
         id = currentId;
@@ -23,7 +23,7 @@ public class ServerObject {
 
     private Vector3 getForward(){
         Matrix3x3 matrix = Matrix3x3.getIdentity();
-        matrix.RotateY(rotation.toVector3Rad().y);
+        matrix.RotateY(transform.rotation.toVector3Rad().y);
         return matrix.TransformY(Vector3.forward);
     }
 
@@ -31,36 +31,49 @@ public class ServerObject {
         return id;
     }
 
-    public void ReceiveCommand(Command command)
+    public void receiveCommand(Command command)
     {
         commands.add(command);
     }
 
-    public void UpdateGame()
+    public void updateGame(GameMap gameMap)
     {
         while(commands.size() > 0) {
-            HandleCommand(commands.poll());
+            handleCommand(commands.poll(), gameMap);
         }
     }
 
-    private void HandleCommand(Command command)
+    private void handleCommand(Command command, GameMap gameMap)
     {
         isDirty = true;
+        Vector3 oldPos = null;
+        Quaternion oldRot = null;
         switch (command.keyCode)
         {
             case 0:
-                position = position.add(getForward().mul(Speed * deltaTime));
+                oldPos = transform.position;
+                transform.position = transform.position.add(getForward().mul(Speed * deltaTime));
                 break;
             case 1:
-                position = position.subtract(getForward().mul(Speed * deltaTime));
+                oldPos = transform.position;
+                transform.position = transform.position.subtract(getForward().mul(Speed * deltaTime));
                 break;
             case 2:
-                rotation = rotation.add(RotateSpeed.mul(deltaTime));
+                oldRot = transform.rotation;
+                transform.rotation = transform.rotation.add(RotateSpeed.mul(deltaTime));
                 break;
             case 3:
-                rotation = rotation.add(RotateSpeed.mul(-deltaTime));
+                oldRot = transform.rotation;
+                transform.rotation = transform.rotation.add(RotateSpeed.mul(-deltaTime));
                 break;
         }
-        //System.out.println(position);
+        if(oldPos != null || oldRot != null) {
+            for(Obstacle obstacle : gameMap.obstacles){
+                if(transform.checkCollision(obstacle.transform)){
+                    if(oldPos != null) transform.position = oldPos;
+                    if(oldRot != null) transform.rotation = oldRot;
+                }
+            }
+        }
     }
 }

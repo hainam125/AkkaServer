@@ -32,7 +32,7 @@ public class LobbyActor extends AbstractActor {
             String roomName = data.getRoomName();
             UserRef userRef = websockets.get(data.getUserId());
             if(rooms.containsKey(roomName)) {
-                Response response = new Response(data.getRequestId(), Json.toJson(new CreateRoom("", -1, false)).toString(), CreateRoom.class.getSimpleName());
+                Response response = new Response(data.getRequestId(), Json.toJson(new CreateRoom("", -1, "", false)).toString(), CreateRoom.class.getSimpleName());
                 userRef.getOut().tell(Json.toJson(response), ActorRef.noSender());
 
             }

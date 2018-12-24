@@ -1,5 +1,7 @@
 package games;
 
+import java.util.List;
+
 public class Matrix3x3 {
     private static Matrix3x3 Instance = new Matrix3x3();
     public static Matrix3x3 getIdentity() {
@@ -50,27 +52,26 @@ public class Matrix3x3 {
         m_Matrix._31 = 0; m_Matrix._32 = 0; m_Matrix._33 = 1;
     }
 
-    public void Translate(float x, float y) {
+    public void TranslateY(float x, float z) {
         Matrix mat = new Matrix();
 
         mat._11 = 1; mat._12 = 0; mat._13 = 0;
-        mat._21 = 0; mat._22 = 1; mat._23 = 0;
-        mat._31 = x; mat._32 = y; mat._33 = 1;
-
-        MatrixMultiply(mat);
-    }
-
-    public void Scale(float xScale, float yScale) {
-        Matrix mat = new Matrix();
-
-        mat._11 = xScale; mat._12 = 0; mat._13 = 0;
-        mat._21 = 0; mat._22 = yScale; mat._23 = 0;
+        mat._21 = x; mat._22 = 1; mat._23 = z;
         mat._31 = 0; mat._32 = 0; mat._33 = 1;
 
         MatrixMultiply(mat);
     }
 
-    //rotate anti-clockwise
+    public void ScaleY(float xScale, float zScale) {
+        Matrix mat = new Matrix();
+
+        mat._11 = xScale; mat._12 = 0; mat._13 = 0;
+        mat._21 = 0; mat._22 = 1; mat._23 = 0;
+        mat._31 = 0; mat._32 = 0; mat._33 = zScale;
+
+        MatrixMultiply(mat);
+    }
+
     public void RotateY(float rot) {
         Matrix mat = new Matrix();
 
@@ -84,9 +85,30 @@ public class Matrix3x3 {
         MatrixMultiply(mat);
     }
 
+    public void RotateY(Vector3 fwd, Vector3 side) {
+        Matrix mat = new Matrix();
+
+        mat._11 = fwd.x; mat._21 = 0; mat._31 = fwd.z;
+        mat._12 = 0; mat._22 = 1; mat._32 = 0;
+        mat._13 = side.x; mat._23 = 0; mat._33 = side.z;
+
+        MatrixMultiply(mat);
+    }
+
     public Vector3 TransformY(Vector3 vPoint) {
-        float tempX = m_Matrix._11 * vPoint.x + m_Matrix._31 * vPoint.z;
-        float tempZ = m_Matrix._13 * vPoint.x + m_Matrix._33 * vPoint.z;
+        float tempX = m_Matrix._11 * vPoint.x + m_Matrix._31 * vPoint.z + m_Matrix._21;
+        float tempZ = m_Matrix._13 * vPoint.x + m_Matrix._33 * vPoint.z + m_Matrix._23;
         return new Vector3(tempX, 0, tempZ);
+    }
+
+    public List<Vector3> TransformY(List<Vector3> vPoints)
+    {
+        for (int i = 0; i < vPoints.size(); i++)
+        {
+            float tempX = m_Matrix._11 * vPoints.get(i).x + m_Matrix._31 * vPoints.get(i).z + m_Matrix._21;
+            float tempZ = m_Matrix._13 * vPoints.get(i).x + m_Matrix._33 * vPoints.get(i).z + m_Matrix._23;
+            vPoints.set(i, new Vector3(tempX, 0, tempZ));
+        }
+        return vPoints;
     }
 }
