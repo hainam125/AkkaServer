@@ -46,32 +46,44 @@ public class ServerObject {
     private void handleCommand(Command command, GameMap gameMap)
     {
         isDirty = true;
-        Vector3 oldPos = null;
-        Quaternion oldRot = null;
         switch (command.keyCode)
         {
             case 0:
-                oldPos = transform.position;
-                transform.position = transform.position.add(getForward().mul(Speed * deltaTime));
+                handleMovement(1f, gameMap);
                 break;
             case 1:
-                oldPos = transform.position;
-                transform.position = transform.position.subtract(getForward().mul(Speed * deltaTime));
+                handleMovement(-1f, gameMap);
                 break;
             case 2:
-                oldRot = transform.rotation;
-                transform.rotation = transform.rotation.add(RotateSpeed.mul(deltaTime));
+                handleRotation(1f, gameMap);
                 break;
             case 3:
-                oldRot = transform.rotation;
-                transform.rotation = transform.rotation.add(RotateSpeed.mul(-deltaTime));
+                handleRotation(-1f, gameMap);
                 break;
         }
-        if(oldPos != null || oldRot != null) {
+    }
+
+    private void handleRotation(float directon, GameMap gameMap) {
+        Quaternion oldRot = transform.rotation;
+        transform.rotation = transform.rotation.add(RotateSpeed.mul(directon * deltaTime));
+        for(Obstacle obstacle : gameMap.obstacles){
+            if(transform.checkCollision(obstacle.transform)){
+                transform.rotation = oldRot;
+            }
+        }
+    }
+
+    private void handleMovement(float direction, GameMap gameMap) {
+        Vector3 oldPos = transform.position;
+        float step = 0.1f;
+        float current = 0f;
+        while (current <= Speed) {
+            current += step;
+            if(current > Speed) step = Speed - (current - step);
+            transform.position = transform.position.add(getForward().mul(step * deltaTime * direction));
             for(Obstacle obstacle : gameMap.obstacles){
                 if(transform.checkCollision(obstacle.transform)){
                     if(oldPos != null) transform.position = oldPos;
-                    if(oldRot != null) transform.rotation = oldRot;
                 }
             }
         }
