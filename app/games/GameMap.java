@@ -10,6 +10,6 @@ public class GameMap {
     public GameMap(){
         objects = new ArrayList<>();
         obstacles = new ArrayList<>();
-        obstacles.add(new Obstacle(new Vector3(1, 0, -4.5f), new Vector3(3f, 1f, 1.5f), Quaternion.zero));
+        //obstacles.add(new Obstacle(new Vector3(1, 0, -4.5f), new Vector3(3f, 1f, 1.5f), Quaternion.zero));
     }
 }
