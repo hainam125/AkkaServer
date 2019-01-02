@@ -12,6 +12,7 @@ import models.CreateRoom;
 import models.User;
 import models.UserRef;
 import network.data.Optimazation;
+import network.object.DestroyedEntity;
 import network.object.ExistingEntity;
 import network.object.NewEntity;
 import network.object.SnapShot;
@@ -22,6 +23,7 @@ import java.util.*;
 
 public class RoomActor extends AbstractActor {
     public static int tick = 15;
+    public static float deltaTime = 1f / 50f;
     private Map<Long, ActorRef > websockets;
     private final ActorRef lobbyActor;
     private Map<UserRef, Long> commandsSoFar;
@@ -85,7 +87,7 @@ public class RoomActor extends AbstractActor {
                 userRef.getOut().tell(Json.toJson(response), ActorRef.noSender());
             }
 
-            gameMap.objects.add(serverObject);
+            gameMap.serverObjects.add(serverObject);
             commandsSoFar.put(userRef, 0L);
             objectMap.put(userRef, serverObject);
         }).match(Send.class, data -> {
@@ -101,7 +103,7 @@ public class RoomActor extends AbstractActor {
             commandsSoFar.remove(userRef);
             ServerObject serverObject = objectMap.get(userRef);
             objectMap.remove(userRef);
-            gameMap.objects.remove(serverObject);
+            gameMap.serverObjects.remove(serverObject);
             websockets.remove(userId);
             if(websockets.size() == 0) lobbyActor.tell(new RoomStatus(websockets.size()), getSelf());
         }).build();
@@ -115,13 +117,26 @@ public class RoomActor extends AbstractActor {
     }
 
     private void receiveCommand(UserRef userRef, Command command){
-        userRef.getServerObject().receiveCommand(command);
+        ServerObject object = userRef.getServerObject();
+        if(command.keyCode == 4) {
+            Transform transform = object.transform;
+            Vector3 forward = transform.getForward();
+            gameMap.addMovingObject(new Projectile(
+                    forward,
+                    transform.position.add(forward.mul(1.0f)),
+                    new Vector3(0.3f, 0.3f, 0.3f),
+                    Quaternion.zero
+            ));
+        }
+        else {
+            object.receiveCommand(command);
+        }
         commandsSoFar.put(userRef, command.id);
     }
 
     private SnapShot currentRoomStatus(){
         ArrayList<NewEntity> syncEntities = new ArrayList<>();
-        for(ServerObject object : gameMap.objects){
+        for(ServerObject object : gameMap.serverObjects){
             NewEntity entity = new NewEntity(
                     object.getId(),
                     ServerObject.PrefabId,
@@ -141,6 +156,17 @@ public class RoomActor extends AbstractActor {
             );
             syncEntities.add(entity);
         }
+
+        for(Projectile object : gameMap.movingObjects){
+            NewEntity entity = new NewEntity(
+                    object.getId(),
+                    Projectile.PrefabId,
+                    object.transform.rotation,
+                    object.transform.position,
+                    object.transform.bound
+            );
+            syncEntities.add(entity);
+        }
         SnapShot snapShot = new SnapShot();
         snapShot.newEntities = syncEntities;
         return snapShot;
@@ -148,8 +174,11 @@ public class RoomActor extends AbstractActor {
 
     private class GameLoop implements Runnable {
         public void run() {
-            Iterator<ServerObject> iter = gameMap.objects.iterator();
+            Iterator<ServerObject> iter = gameMap.serverObjects.iterator();
             ArrayList<ExistingEntity> syncEntities = new ArrayList<>();
+            ArrayList<ExistingEntity> movingEntities = new ArrayList<>();
+            ArrayList<NewEntity> newEntities = new ArrayList<>();
+            ArrayList<DestroyedEntity> removeEntities = new ArrayList<>();
 
             while (iter.hasNext()) {
                 ServerObject object = iter.next();
@@ -165,8 +194,53 @@ public class RoomActor extends AbstractActor {
                 }
             }
 
+            Iterator<Projectile> pIter = gameMap.movingObjects.iterator();
+            ArrayList<Projectile> deadProjectiles = new ArrayList<>();
+            while (pIter.hasNext()) {
+                Projectile object = pIter.next();
+                System.out.println(object.getId() + " id");
+                Vector3 oldPos = object.transform.position;
+
+                if(object.isNew) {
+                    object.isNew = false;
+                    NewEntity entity = new NewEntity(
+                            object.getId(),
+                            Projectile.PrefabId,
+                            object.transform.rotation,
+                            object.transform.position,
+                            object.transform.bound
+                    );
+                    newEntities.add(entity);
+                }
+                else if(object.isDead) {
+                    DestroyedEntity entity = new DestroyedEntity(object.getId());
+                    removeEntities.add(entity);
+                    deadProjectiles.add(object);
+                }
+                else  {
+                    object.transform.position = object.transform.position.add(object.direction.mul(Projectile.Speed).mul(1f / tick));
+                    if(gameMap.checkCollision(object)){
+                        object.transform.position = oldPos;
+                        object.isDead = true;
+                    }
+                    ExistingEntity entity = new ExistingEntity(
+                            object.getId(),
+                            Optimazation.CompressRot(object.transform.rotation),
+                            Optimazation.CompressPos2(object.transform.position)
+                    );
+                    movingEntities.add(entity);
+                }
+            }
+            for(int i = 0; i < deadProjectiles.size(); i++) {
+                gameMap.movingObjects.remove(deadProjectiles.get(i));
+            }
+
             SnapShot snapShot = new SnapShot();
             snapShot.existingEntities = syncEntities;
+            snapShot.movingEntities = movingEntities;
+            snapShot.newEntities = newEntities;
+            snapShot.destroyedEntities = removeEntities;
+
             for (Map.Entry<UserRef, Long> entry : commandsSoFar.entrySet()) {
                 SnapShot clone = snapShot.clone();
                 clone.commandId = entry.getValue();

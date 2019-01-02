@@ -59,7 +59,6 @@ public class LobbyActor extends AbstractActor {
                 rooms.values().remove(sender());
                 context().stop(sender());
             }
-            System.out.println(rooms.size());
         }).build();
     }
 }

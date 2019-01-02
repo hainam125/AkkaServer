@@ -8,6 +8,11 @@ public class Transform {
     public Quaternion rotation = Quaternion.zero;
     public Vector3 bound = Vector3.one;
 
+    public Vector3 getForward(){
+        Matrix3x3 matrix = Matrix3x3.getIdentity();
+        matrix.RotateY(rotation.toVector3Rad().y);
+        return matrix.TransformY(Vector3.forward);
+    }
 
     private List<Vector3> getPointsInWorldCord(){
         List<Vector3> points = new ArrayList<Vector3>(){{
