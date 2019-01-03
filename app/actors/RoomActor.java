@@ -176,7 +176,6 @@ public class RoomActor extends AbstractActor {
 
         public void run() {
             ArrayList<ExistingEntity> syncEntities = new ArrayList<>();
-            ArrayList<ExistingEntity> movingEntities = new ArrayList<>();
             ArrayList<NewEntity> newEntities = new ArrayList<>();
             ArrayList<DestroyedEntity> removeEntities = new ArrayList<>();
 
@@ -186,6 +185,7 @@ public class RoomActor extends AbstractActor {
                 if (object.isDirty) {
                     ExistingEntity entity = new ExistingEntity(
                             object.getId(),
+                            ServerObject.PrefabId,
                             Optimazation.CompressRot(object.transform.rotation),
                             Optimazation.CompressPos2(object.transform.position)
                     );
@@ -218,23 +218,22 @@ public class RoomActor extends AbstractActor {
                 else  {
                     object.transform.position = object.transform.position.add(object.direction.mul(Projectile.Speed).mul(1f / tick));
                     if(gameMap.checkCollision(object)){
-                        object.transform.position = oldPos;
+                        //object.transform.position = oldPos;
                         object.isDead = true;
                     }
                     ExistingEntity entity = new ExistingEntity(
                             object.getId(),
+                            Projectile.PrefabId,
                             Optimazation.CompressRot(object.transform.rotation),
                             Optimazation.CompressPos2(object.transform.position)
                     );
-                    movingEntities.add(entity);
-                    System.out.println(object.direction);
+                    syncEntities.add(entity);
                 }
             }
             gameMap.movingObjects.removeAll(deadProjectiles);
 
             SnapShot snapShot = new SnapShot();
             snapShot.existingEntities = syncEntities;
-            snapShot.movingEntities = movingEntities;
             snapShot.newEntities = newEntities;
             snapShot.destroyedEntities = removeEntities;
 
