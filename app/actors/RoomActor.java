@@ -148,7 +148,7 @@ public class RoomActor extends AbstractActor {
         }
         for(Obstacle object : gameMap.obstacles){
             NewEntity entity = new NewEntity(
-                    Obstacle.Id,
+                    object.getId(),
                     Obstacle.PrefabId,
                     object.transform.rotation,
                     object.transform.position,
@@ -195,8 +195,8 @@ public class RoomActor extends AbstractActor {
             }
 
             ArrayList<Projectile> deadProjectiles = new ArrayList<>();
-            for (Iterator<Projectile> pIter = gameMap.movingObjects.iterator(); pIter.hasNext();) {
-                Projectile object = pIter.next();
+            for (Iterator<Projectile> iter = gameMap.movingObjects.iterator(); iter.hasNext();) {
+                Projectile object = iter.next();
                 Vector3 oldPos = object.transform.position;
 
                 if(object.isNew) {
@@ -227,6 +227,7 @@ public class RoomActor extends AbstractActor {
                             Optimazation.CompressPos2(object.transform.position)
                     );
                     movingEntities.add(entity);
+                    System.out.println(object.direction);
                 }
             }
             gameMap.movingObjects.removeAll(deadProjectiles);

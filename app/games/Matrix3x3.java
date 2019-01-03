@@ -3,10 +3,8 @@ package games;
 import java.util.List;
 
 public class Matrix3x3 {
-    private static Matrix3x3 Instance = new Matrix3x3();
     public static Matrix3x3 getIdentity() {
-        Instance.Identity();
-        return Instance;
+        return new Matrix3x3();
     }
     private class Matrix {
         public float _11, _12, _13;

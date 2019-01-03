@@ -3,14 +3,12 @@ package games;
 import actors.RoomActor;
 import data.Command;
 
-import java.util.LinkedList;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 public class ServerObject {
     public static final int PrefabId = 0;
-    private static long currentId = 1;
-    private static Vector3 RotateSpeed = new Vector3(0, 100f, 0).mul((float)(Math.PI / 180));
+    private static Vector3 RotateSpeed = new Vector3(0f, 100f, 0f).mul((float)(Math.PI / 180f));
     private final float Speed = 7f;
     private final float MoveStep = 0.1f;
     private long id;
@@ -19,8 +17,7 @@ public class ServerObject {
     public Transform transform = new Transform();
 
     public ServerObject(){
-        id = currentId;
-        currentId++;
+        id = GameObject.getCurrentId();
     }
 
     public long getId() {
