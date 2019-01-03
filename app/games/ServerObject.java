@@ -41,20 +41,18 @@ public class ServerObject {
     private void handleCommand(Command command, GameMap gameMap)
     {
         isDirty = true;
-        switch (command.keyCode)
-        {
-            case 0:
-                handleMovement(1f, gameMap);
-                break;
-            case 1:
-                handleMovement(-1f, gameMap);
-                break;
-            case 2:
-                handleRotation(1f, gameMap);
-                break;
-            case 3:
-                handleRotation(-1f, gameMap);
-                break;
+        byte code = command.keyCode;
+        if(KeyCode.isUp(code)){
+            handleMovement(1f, gameMap);
+        }
+        else if(KeyCode.isDown(code)) {
+            handleMovement(-1f, gameMap);
+        }
+        if(KeyCode.isRight(code)){
+            handleRotation(1f, gameMap);
+        }
+        else if(KeyCode.isLeft(code)) {
+            handleRotation(-1f, gameMap);
         }
     }
 

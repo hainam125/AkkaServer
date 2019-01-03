@@ -118,17 +118,17 @@ public class RoomActor extends AbstractActor {
 
     private void receiveCommand(UserRef userRef, Command command){
         ServerObject object = userRef.getServerObject();
-        if(command.keyCode == 4) {
+        if(KeyCode.isSpace(command.keyCode)) {
             Transform transform = object.transform;
             Vector3 forward = transform.getForward();
             gameMap.addMovingObject(new Projectile(
                     forward,
-                    transform.position.add(forward.mul(1.0f)),
+                    transform.position.add(forward.mul(1.5f)),
                     new Vector3(0.3f, 0.3f, 0.3f),
-                    Quaternion.zero
+                    transform.rotation
             ));
         }
-        else {
+        if(command.keyCode != KeyCode.Space.getValue()) {
             object.receiveCommand(command);
         }
         commandsSoFar.put(userRef, command.id);
@@ -173,6 +173,7 @@ public class RoomActor extends AbstractActor {
     }
 
     private class GameLoop implements Runnable {
+
         public void run() {
             Iterator<ServerObject> iter = gameMap.serverObjects.iterator();
             ArrayList<ExistingEntity> syncEntities = new ArrayList<>();
@@ -198,7 +199,6 @@ public class RoomActor extends AbstractActor {
             ArrayList<Projectile> deadProjectiles = new ArrayList<>();
             while (pIter.hasNext()) {
                 Projectile object = pIter.next();
-                System.out.println(object.getId() + " id");
                 Vector3 oldPos = object.transform.position;
 
                 if(object.isNew) {
