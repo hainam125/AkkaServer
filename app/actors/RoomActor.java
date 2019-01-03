@@ -175,13 +175,12 @@ public class RoomActor extends AbstractActor {
     private class GameLoop implements Runnable {
 
         public void run() {
-            Iterator<ServerObject> iter = gameMap.serverObjects.iterator();
             ArrayList<ExistingEntity> syncEntities = new ArrayList<>();
             ArrayList<ExistingEntity> movingEntities = new ArrayList<>();
             ArrayList<NewEntity> newEntities = new ArrayList<>();
             ArrayList<DestroyedEntity> removeEntities = new ArrayList<>();
 
-            while (iter.hasNext()) {
+            for (Iterator<ServerObject> iter = gameMap.serverObjects.iterator(); iter.hasNext();) {
                 ServerObject object = iter.next();
                 object.updateGame(gameMap);
                 if (object.isDirty) {
@@ -195,9 +194,8 @@ public class RoomActor extends AbstractActor {
                 }
             }
 
-            Iterator<Projectile> pIter = gameMap.movingObjects.iterator();
             ArrayList<Projectile> deadProjectiles = new ArrayList<>();
-            while (pIter.hasNext()) {
+            for (Iterator<Projectile> pIter = gameMap.movingObjects.iterator(); pIter.hasNext();) {
                 Projectile object = pIter.next();
                 Vector3 oldPos = object.transform.position;
 
@@ -231,9 +229,7 @@ public class RoomActor extends AbstractActor {
                     movingEntities.add(entity);
                 }
             }
-            for(int i = 0; i < deadProjectiles.size(); i++) {
-                gameMap.movingObjects.remove(deadProjectiles.get(i));
-            }
+            gameMap.movingObjects.removeAll(deadProjectiles);
 
             SnapShot snapShot = new SnapShot();
             snapShot.existingEntities = syncEntities;

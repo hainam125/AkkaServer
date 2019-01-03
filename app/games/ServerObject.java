@@ -5,6 +5,7 @@ import data.Command;
 
 import java.util.LinkedList;
 import java.util.Queue;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
 public class ServerObject {
     public static final int PrefabId = 0;
@@ -13,7 +14,7 @@ public class ServerObject {
     private final float Speed = 7f;
     private final float MoveStep = 0.1f;
     private long id;
-    private Queue<Command> commands = new LinkedList<>();
+    private Queue<Command> commands = new ConcurrentLinkedQueue<>();
     public boolean isDirty = true;
     public Transform transform = new Transform();
 
