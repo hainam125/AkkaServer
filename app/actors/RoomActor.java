@@ -217,8 +217,11 @@ public class RoomActor extends AbstractActor {
                 }
                 else  {
                     object.transform.position = object.transform.position.add(object.direction.mul(Projectile.Speed).mul(1f / tick));
-                    if(gameMap.checkCollision(object)){
-                        //object.transform.position = oldPos;
+                    ServerObject serverObject = gameMap.checkPlayerCollision(object);
+                    if(serverObject != null){
+                        object.isDead = true;
+                    }
+                    else if(gameMap.checkObstacleCollision(object)) {
                         object.isDead = true;
                     }
                     ExistingEntity entity = new ExistingEntity(

@@ -20,17 +20,21 @@ public class GameMap {
         movingObjects.add(object);
     }
 
-    public boolean checkCollision(Projectile projectile) {
+    public boolean checkObstacleCollision(Projectile projectile) {
         for(Obstacle obstacle : obstacles){
             if(projectile.transform.checkCollision(obstacle.transform)){
                 return true;
             }
         }
+        return false;
+    }
+
+    public ServerObject checkPlayerCollision(Projectile projectile) {
         for(ServerObject o : serverObjects){
             if(projectile.transform.checkCollision(o.transform)){
-                return true;
+                return o;
             }
         }
-        return false;
+        return null;
     }
 }
