@@ -4,10 +4,11 @@ import games.objects.Obstacle;
 import games.objects.PlayerObject;
 import games.objects.Projectile;
 import games.transform.Quaternion;
+import games.transform.Transform;
 import games.transform.Vector3;
+import play.api.Play;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 public class GameMap {
@@ -15,15 +16,39 @@ public class GameMap {
     public List<PlayerObject> playerObjects;
     public List<Projectile> movingObjects;
 
+
+    private HashMap<PlayerObject, HashSet<PlayerObject>> overlapTransforms;
+
     public GameMap(){
         playerObjects = new ArrayList<>();
         movingObjects = new CopyOnWriteArrayList<>();
-        obstacles = new ArrayList<>();
-        obstacles.add(new Obstacle(new Vector3(10f, 0f, 0.5f), new Vector3(1.5f, 1f, 3.5f), Quaternion.zero));
-        obstacles.add(new Obstacle(new Vector3(0f, 0f, 130f), new Vector3(270f, 1f, 4f), Quaternion.zero));
-        obstacles.add(new Obstacle(new Vector3(0f, 0f, -130f), new Vector3(270f, 1f, 4f), Quaternion.zero));
-        obstacles.add(new Obstacle(new Vector3(-130f, 0f, 0f), new Vector3(4f, 1f, 270f), Quaternion.zero));
-        obstacles.add(new Obstacle(new Vector3(130f, 0f, 0f), new Vector3(4f, 1f, 270f), Quaternion.zero));
+        overlapTransforms = new HashMap<>();
+        createWalls();
+    }
+
+    public void removePlayerObject(PlayerObject playerObject) {
+        playerObjects.remove(playerObject);
+        overlapTransforms.remove(playerObject);
+        for (Map.Entry<PlayerObject, HashSet<PlayerObject>> entry : overlapTransforms.entrySet())
+        {
+            entry.getValue().remove(playerObject);
+        }
+    }
+
+    public PlayerObject createPlayerObject(){
+        PlayerObject playerObject = new PlayerObject();
+        HashSet<PlayerObject> overlap = new HashSet<>();
+        for(PlayerObject o : playerObjects){
+            if(playerObject.transform.checkCollision(o.transform)){
+                overlap.add(o);
+                if(!overlapTransforms.containsKey(o)){
+                    overlapTransforms.put(o, new HashSet<>());
+                }
+                overlapTransforms.get(o).add(playerObject);
+            }
+        }
+        if(overlap.size() > 0) overlapTransforms.put(playerObject, overlap);
+        return playerObject;
     }
 
     public void addMovingObject(Projectile object) {
@@ -46,5 +71,43 @@ public class GameMap {
             }
         }
         return null;
+    }
+
+    public boolean checkPlayerCollision(PlayerObject player) {
+        for(PlayerObject o : playerObjects){
+            if(o == player) continue;
+            if(player.transform.checkCollision(o.transform)) {
+                if(!overlapTransforms.containsKey(player)) {
+                    return true;
+                }
+            }
+            else {
+                if(overlapTransforms.containsKey(player)) {
+                    HashSet<PlayerObject> overlap = overlapTransforms.get(player);
+                    if(overlap.remove(o) && overlap.size() == 0){
+                        overlapTransforms.remove(player);
+                    }
+                }
+            }
+        }
+        return false;
+    }
+
+    public boolean checkObstacleCollision(PlayerObject player) {
+        for(Obstacle obstacle : obstacles){
+            if(player.transform.checkCollision(obstacle.transform)){
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private void createWalls(){
+        obstacles = new ArrayList<>();
+        obstacles.add(new Obstacle(new Vector3(10f, 0f, 0.5f), new Vector3(1.5f, 1f, 3.5f), Quaternion.zero));
+        obstacles.add(new Obstacle(new Vector3(0f, 0f, 130f), new Vector3(270f, 1f, 4f), Quaternion.zero));
+        obstacles.add(new Obstacle(new Vector3(0f, 0f, -130f), new Vector3(270f, 1f, 4f), Quaternion.zero));
+        obstacles.add(new Obstacle(new Vector3(-130f, 0f, 0f), new Vector3(4f, 1f, 270f), Quaternion.zero));
+        obstacles.add(new Obstacle(new Vector3(130f, 0f, 0f), new Vector3(4f, 1f, 270f), Quaternion.zero));
     }
 }

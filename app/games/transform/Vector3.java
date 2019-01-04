@@ -28,6 +28,13 @@ public class Vector3 {
         return new Vector3(multiplier * x, multiplier * y, multiplier * z);
     }
 
+    public static float DistanceSq(Vector3 v1, Vector3 v2) {
+        float dx = v1.x - v2.x;
+        float dy = v1.y - v2.y;
+        float dz = v1.z - v2.z;
+        return dx * dx + dy * dy + dz * dz;
+    }
+
     @Override
     public String toString() {
         return x + " , " + y + " , " + z;

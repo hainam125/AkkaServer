@@ -67,7 +67,7 @@ public class RoomActor extends AbstractActor {
             long userId = userRef.getUser().getId();
             websockets.put(userId, userRef.getOut());
 
-            PlayerObject playerObject = new PlayerObject();
+            PlayerObject playerObject = gameMap.createPlayerObject();
             userRef.setPlayerObject(playerObject);
 
             SnapShot snapShot = currentRoomStatus();
@@ -92,7 +92,7 @@ public class RoomActor extends AbstractActor {
                 userRef.getOut().tell(Json.toJson(response), ActorRef.noSender());
             }
 
-            gameMap.playerObjects.add(playerObject);
+            gameMap.playerObjects.add(playerObject);//add here to avoid duplicate
             commandsSoFar.put(userRef, 0L);
             objectMap.put(userRef, playerObject);
         }).match(Send.class, data -> {
@@ -108,7 +108,7 @@ public class RoomActor extends AbstractActor {
             commandsSoFar.remove(userRef);
             PlayerObject playerObject = objectMap.get(userRef);
             objectMap.remove(userRef);
-            gameMap.playerObjects.remove(playerObject);
+            gameMap.removePlayerObject(playerObject);
             websockets.remove(userId);
             if(websockets.size() == 0) lobbyActor.tell(new RoomStatus(websockets.size()), getSelf());
         }).build();

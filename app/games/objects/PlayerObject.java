@@ -7,6 +7,9 @@ import games.transform.Quaternion;
 import games.transform.Transform;
 import games.transform.Vector3;
 
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
@@ -62,17 +65,14 @@ public class PlayerObject {
     private void handleRotation(float direction, GameMap gameMap) {
         Quaternion oldRot = transform.rotation;
         transform.rotation = transform.rotation.add(RotateSpeed.mul(direction * RoomActor.deltaTime));
-        for(Obstacle obstacle : gameMap.obstacles){
-            if(transform.checkCollision(obstacle.transform)){
-                transform.rotation = oldRot;
-                return;
-            }
+
+        if(gameMap.checkPlayerCollision(this)) {
+            transform.rotation = oldRot;
+            return;
         }
-        for(PlayerObject o : gameMap.playerObjects){
-            if(o != this && transform.checkCollision(o.transform)){
-                transform.rotation = oldRot;
-                return;
-            }
+        if(gameMap.checkObstacleCollision(this)) {
+            transform.rotation = oldRot;
+            return;
         }
     }
 
@@ -83,17 +83,14 @@ public class PlayerObject {
             float step = current > Speed ? Speed - (current - MoveStep) : MoveStep;
             Vector3 oldPos = transform.position;
             transform.position = transform.position.add(transform.getForward().mul(step * RoomActor.deltaTime * direction));
-            for(Obstacle obstacle : gameMap.obstacles){
-                if(transform.checkCollision(obstacle.transform)){
-                    transform.position = oldPos;
-                    return;
-                }
+
+            if(gameMap.checkPlayerCollision(this)) {
+                transform.position = oldPos;
+                return;
             }
-            for(PlayerObject o : gameMap.playerObjects){
-                if(o != this && transform.checkCollision(o.transform)){
-                    transform.position = oldPos;
-                    return;
-                }
+            if(gameMap.checkObstacleCollision(this)) {
+                transform.position = oldPos;
+                return;
             }
         }
     }

@@ -31,7 +31,7 @@ public class Transform {
         return points;
     }
 
-    public List<Vector3> getLocalPoint(List<Vector3> points)
+    private List<Vector3> getLocalPoint(List<Vector3> points)
     {
         Matrix3x3 matrix = Matrix3x3.getIdentity();
         for(int i = 0; i < points.size(); i++) points.set(i, points.get(i).subtract(position));
@@ -43,6 +43,11 @@ public class Transform {
 
     public boolean checkCollision(Transform other)
     {
+        float distanceSq = Vector3.DistanceSq(position, other.position);
+        float minBound = Math.min(bound.x, bound.z) * 0.5f;
+        float minOtherBound = Math.min(other.bound.x, other.bound.z) * 0.5f;
+        if(distanceSq < (minBound + minOtherBound) * (minBound + minOtherBound)) return true;
+
         List<Vector3> points = getLocalPoint(other.getPointsInWorldCord());
         for(int i = 0; i < points.size(); i++)
         {
