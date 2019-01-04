@@ -29,10 +29,10 @@ public class GameMap {
     private void createWalls(){
         obstacles = new ArrayList<>();
         obstacles.add(new Obstacle(new Vector3(10f, 0f, 0.5f), new Vector3(1.5f, 1f, 3.5f), Quaternion.zero));
-        obstacles.add(new Obstacle(new Vector3(0f, 0f, 130f), new Vector3(270f, 1f, 4f), Quaternion.zero));
-        obstacles.add(new Obstacle(new Vector3(0f, 0f, -130f), new Vector3(270f, 1f, 4f), Quaternion.zero));
-        obstacles.add(new Obstacle(new Vector3(-130f, 0f, 0f), new Vector3(4f, 1f, 270f), Quaternion.zero));
-        obstacles.add(new Obstacle(new Vector3(130f, 0f, 0f), new Vector3(4f, 1f, 270f), Quaternion.zero));
+        obstacles.add(new Obstacle(new Vector3(0f, 0f, 50f), new Vector3(100f, 1f, 4f), Quaternion.zero));
+        obstacles.add(new Obstacle(new Vector3(0f, 0f, -50f), new Vector3(100f, 1f, 4f), Quaternion.zero));
+        obstacles.add(new Obstacle(new Vector3(-50f, 0f, 0f), new Vector3(4f, 1f, 100f), Quaternion.zero));
+        obstacles.add(new Obstacle(new Vector3(50f, 0f, 0f), new Vector3(4f, 1f, 100f), Quaternion.zero));
     }
 
     public void removePlayerObject(PlayerObject playerObject) {
