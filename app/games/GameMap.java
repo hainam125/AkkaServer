@@ -66,7 +66,7 @@ public class GameMap {
 
     public PlayerObject checkPlayerCollision(Projectile projectile) {
         for(PlayerObject o : playerObjects){
-            if(projectile.transform.checkCollision(o.transform)){
+            if(projectile.getPlayerObject() != o && projectile.transform.checkCollision(o.transform)){
                 return o;
             }
         }
