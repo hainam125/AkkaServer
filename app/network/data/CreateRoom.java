@@ -1,4 +1,4 @@
-package models;
+package network.data;
 
 public class CreateRoom {
     private String name;

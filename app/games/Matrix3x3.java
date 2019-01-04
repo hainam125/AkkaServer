@@ -1,5 +1,7 @@
 package games;
 
+import games.transform.Vector3;
+
 import java.util.List;
 
 public class Matrix3x3 {

@@ -1,12 +1,16 @@
-package games;
+package games.objects;
 
 import actors.RoomActor;
-import data.Command;
+import network.data.Command;
+import games.*;
+import games.transform.Quaternion;
+import games.transform.Transform;
+import games.transform.Vector3;
 
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
-public class ServerObject {
+public class PlayerObject {
     public static final int PrefabId = 0;
     private static final Vector3 RotateSpeed = new Vector3(0f, 100f, 0f).mul((float)(Math.PI / 180f));
     private static final float Speed = 7f;
@@ -17,7 +21,7 @@ public class ServerObject {
     public boolean isDirty = true;
     public Transform transform = new Transform();
 
-    public ServerObject(){
+    public PlayerObject(){
         id = GameObject.getCurrentId();
     }
 
@@ -64,7 +68,7 @@ public class ServerObject {
                 return;
             }
         }
-        for(ServerObject o : gameMap.serverObjects){
+        for(PlayerObject o : gameMap.playerObjects){
             if(o != this && transform.checkCollision(o.transform)){
                 transform.rotation = oldRot;
                 return;
@@ -85,7 +89,7 @@ public class ServerObject {
                     return;
                 }
             }
-            for(ServerObject o : gameMap.serverObjects){
+            for(PlayerObject o : gameMap.playerObjects){
                 if(o != this && transform.checkCollision(o.transform)){
                     transform.position = oldPos;
                     return;

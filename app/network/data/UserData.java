@@ -1,10 +1,12 @@
-package models;
+package network.data;
 
-public class User {
+public class UserData {
     private long id;
     private String username;
 
-    public User(long id) {
+    public UserData(){}
+
+    public void setId(long id) {
         this.id = id;
     }
 
@@ -14,9 +16,5 @@ public class User {
 
     public String getUsername() {
         return username;
-    }
-
-    public void setUsername(String username) {
-        this.username = username;
     }
 }

@@ -1,4 +1,4 @@
-package network.data;
+package games.network.data;
 
 public class CompressRotation {
     public short a, b, c;

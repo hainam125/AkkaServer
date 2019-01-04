@@ -1,7 +1,7 @@
-package network.data;
+package games.network.data;
 
-import games.Quaternion;
-import games.Vector3;
+import games.transform.Quaternion;
+import games.transform.Vector3;
 
 //java byte range [-128;127]
 //c# byte range [0-256]

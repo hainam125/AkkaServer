@@ -2,9 +2,9 @@ package actors;
 
 import akka.actor.AbstractActor;
 import akka.actor.ActorRef;
-import data.Response;
-import data.RoomList;
-import models.CreateRoom;
+import network.Response;
+import network.data.RoomList;
+import network.data.CreateRoom;
 import models.UserRef;
 import messages.*;
 import play.libs.Json;

@@ -1,4 +1,8 @@
-package games;
+package games.objects;
+
+import games.transform.Quaternion;
+import games.transform.Transform;
+import games.transform.Vector3;
 
 public class Obstacle {
     public static final int PrefabId = 1;

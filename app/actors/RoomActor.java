@@ -5,17 +5,22 @@ import akka.actor.ActorRef;
 import akka.actor.Cancellable;
 import akka.actor.Props;
 import com.fasterxml.jackson.databind.JsonNode;
-import data.*;
+import network.*;
 import games.*;
+import games.objects.Obstacle;
+import games.objects.PlayerObject;
+import games.objects.Projectile;
+import games.transform.Transform;
+import games.transform.Vector3;
 import messages.*;
-import models.CreateRoom;
+import network.data.*;
 import models.User;
 import models.UserRef;
-import network.data.Optimazation;
-import network.object.DestroyedEntity;
-import network.object.ExistingEntity;
-import network.object.NewEntity;
-import network.object.SnapShot;
+import games.network.data.Optimazation;
+import games.network.entity.DestroyedEntity;
+import games.network.entity.ExistingEntity;
+import games.network.entity.NewEntity;
+import games.network.entity.SnapShot;
 import play.libs.Json;
 
 import java.time.Duration;
@@ -27,7 +32,7 @@ public class RoomActor extends AbstractActor {
     private Map<Long, ActorRef > websockets;
     private final ActorRef lobbyActor;
     private Map<UserRef, Long> commandsSoFar;
-    private Map<UserRef, ServerObject> objectMap;
+    private Map<UserRef, PlayerObject> objectMap;
     private GameMap gameMap;
     private Cancellable gameLoop;
 
@@ -62,34 +67,34 @@ public class RoomActor extends AbstractActor {
             long userId = userRef.getUser().getId();
             websockets.put(userId, userRef.getOut());
 
-            ServerObject serverObject = new ServerObject();
-            userRef.setServerObject(serverObject);
+            PlayerObject playerObject = new PlayerObject();
+            userRef.setPlayerObject(playerObject);
 
             SnapShot snapShot = currentRoomStatus();
             String snapShotString = Json.toJson(snapShot).toString();
 
             if(data.isCreated()){
-                Response response = new Response(data.getRequestId(), Json.toJson(new CreateRoom(data.getRoom(), serverObject.getId(), snapShotString, true)).toString(), CreateRoom.class.getSimpleName());
+                Response response = new Response(data.getRequestId(), Json.toJson(new CreateRoom(data.getRoom(), playerObject.getId(), snapShotString, true)).toString(), CreateRoom.class.getSimpleName());
                 userRef.getOut().tell(Json.toJson(response), ActorRef.noSender());
             }
             else {
-                Response broadcastResponse = new Response(-1, Json.toJson(new UserJoined(userRef.getUser(), serverObject.getId())).toString(), UserJoined.class.getSimpleName());
+                Response broadcastResponse = new Response(-1, Json.toJson(new UserJoined(userRef.getUser(), playerObject.getId())).toString(), UserJoined.class.getSimpleName());
                 broadcast(Json.toJson(broadcastResponse), userId);
 
                 List<Long> ids = new ArrayList<>();
                 List<String> usernames = new ArrayList<>();
-                for (Map.Entry<UserRef, ServerObject> entry : objectMap.entrySet())
+                for (Map.Entry<UserRef, PlayerObject> entry : objectMap.entrySet())
                 {
                     usernames.add(entry.getKey().getUser().getUsername());
                     ids.add(entry.getValue().getId());
                 }
-                Response response = new Response(data.getRequestId(), Json.toJson(new EnterRoom(data.getRoom(), serverObject.getId(), snapShotString, ids, usernames)).toString(), EnterRoom.class.getSimpleName());
+                Response response = new Response(data.getRequestId(), Json.toJson(new EnterRoom(data.getRoom(), playerObject.getId(), snapShotString, ids, usernames)).toString(), EnterRoom.class.getSimpleName());
                 userRef.getOut().tell(Json.toJson(response), ActorRef.noSender());
             }
 
-            gameMap.serverObjects.add(serverObject);
+            gameMap.playerObjects.add(playerObject);
             commandsSoFar.put(userRef, 0L);
-            objectMap.put(userRef, serverObject);
+            objectMap.put(userRef, playerObject);
         }).match(Send.class, data -> {
             receiveCommand(data.getUserRef(), data.getCommand());
         }).match(Logout.class, data -> {
@@ -101,9 +106,9 @@ public class RoomActor extends AbstractActor {
             broadcast (Json.toJson(broadcastResponse), userId);
 
             commandsSoFar.remove(userRef);
-            ServerObject serverObject = objectMap.get(userRef);
+            PlayerObject playerObject = objectMap.get(userRef);
             objectMap.remove(userRef);
-            gameMap.serverObjects.remove(serverObject);
+            gameMap.playerObjects.remove(playerObject);
             websockets.remove(userId);
             if(websockets.size() == 0) lobbyActor.tell(new RoomStatus(websockets.size()), getSelf());
         }).build();
@@ -117,7 +122,7 @@ public class RoomActor extends AbstractActor {
     }
 
     private void receiveCommand(UserRef userRef, Command command){
-        ServerObject object = userRef.getServerObject();
+        PlayerObject object = userRef.getPlayerObject();
         if(KeyCode.isSpace(command.keyCode)) {
             Transform transform = object.transform;
             Vector3 forward = transform.getForward();
@@ -136,10 +141,10 @@ public class RoomActor extends AbstractActor {
 
     private SnapShot currentRoomStatus(){
         ArrayList<NewEntity> syncEntities = new ArrayList<>();
-        for(ServerObject object : gameMap.serverObjects){
+        for(PlayerObject object : gameMap.playerObjects){
             NewEntity entity = new NewEntity(
                     object.getId(),
-                    ServerObject.PrefabId,
+                    PlayerObject.PrefabId,
                     object.transform.rotation,
                     object.transform.position,
                     object.transform.bound
@@ -179,13 +184,13 @@ public class RoomActor extends AbstractActor {
             ArrayList<NewEntity> newEntities = new ArrayList<>();
             ArrayList<DestroyedEntity> removeEntities = new ArrayList<>();
 
-            for (Iterator<ServerObject> iter = gameMap.serverObjects.iterator(); iter.hasNext();) {
-                ServerObject object = iter.next();
+            for (Iterator<PlayerObject> iter = gameMap.playerObjects.iterator(); iter.hasNext();) {
+                PlayerObject object = iter.next();
                 object.updateGame(gameMap);
                 if (object.isDirty) {
                     ExistingEntity entity = new ExistingEntity(
                             object.getId(),
-                            ServerObject.PrefabId,
+                            PlayerObject.PrefabId,
                             Optimazation.CompressRot(object.transform.rotation),
                             Optimazation.CompressPos2(object.transform.position)
                     );
@@ -217,8 +222,8 @@ public class RoomActor extends AbstractActor {
                 }
                 else  {
                     object.transform.position = object.transform.position.add(object.direction.mul(Projectile.Speed).mul(1f / tick));
-                    ServerObject serverObject = gameMap.checkPlayerCollision(object);
-                    if(serverObject != null){
+                    PlayerObject playerObject = gameMap.checkPlayerCollision(object);
+                    if(playerObject != null){
                         object.isDead = true;
                     }
                     else if(gameMap.checkObstacleCollision(object)) {

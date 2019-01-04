@@ -1,4 +1,4 @@
-package games;
+package games.transform;
 
 public class Vector3 {
     public static Vector3 zero = new Vector3(0, 0, 0);

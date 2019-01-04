@@ -1,4 +1,4 @@
-package data;
+package network.data;
 
 public class Command {
     public byte keyCode;

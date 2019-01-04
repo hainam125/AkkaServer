@@ -1,6 +1,6 @@
 package messages;
 
-import data.Command;
+import network.data.Command;
 import models.UserRef;
 
 public class Send {

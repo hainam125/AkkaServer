@@ -1,10 +1,10 @@
-package network.object;
+package games.network.entity;
 
-import games.Quaternion;
-import games.Vector3;
-import network.data.CompressPosition2;
-import network.data.CompressRotation;
-import network.data.Optimazation;
+import games.transform.Quaternion;
+import games.transform.Vector3;
+import games.network.data.CompressPosition2;
+import games.network.data.CompressRotation;
+import games.network.data.Optimazation;
 
 public class NewEntity extends Entity {
     public int prefabId;

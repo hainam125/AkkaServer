@@ -1,4 +1,4 @@
-package network.data;
+package games.network.data;
 
 public class CompressPosition2 {
     public byte a1, b1, c1;

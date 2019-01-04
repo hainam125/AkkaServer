@@ -1,7 +1,7 @@
-package network.object;
+package games.network.entity;
 
-import network.data.CompressPosition2;
-import network.data.CompressRotation;
+import games.network.data.CompressPosition2;
+import games.network.data.CompressRotation;
 
 public class ExistingEntity extends Entity {
     public CompressRotation rotation;

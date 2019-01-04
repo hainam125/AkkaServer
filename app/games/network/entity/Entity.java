@@ -1,4 +1,4 @@
-package network.object;
+package games.network.entity;
 
 public class Entity {
     protected long id;

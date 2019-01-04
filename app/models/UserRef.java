@@ -1,14 +1,14 @@
 package models;
 
 import akka.actor.ActorRef;
-import games.ServerObject;
+import games.objects.PlayerObject;
 
 public class UserRef {
     private ActorRef self;
     private final ActorRef out;
     private final User user;
     private ActorRef room;
-    private ServerObject serverObject;
+    private PlayerObject playerObject;
 
     public UserRef(User user, ActorRef out) {
         this.user = user;
@@ -39,11 +39,11 @@ public class UserRef {
         this.room = room;
     }
 
-    public ServerObject getServerObject() {
-        return serverObject;
+    public PlayerObject getPlayerObject() {
+        return playerObject;
     }
 
-    public void setServerObject(ServerObject serverObject) {
-        this.serverObject = serverObject;
+    public void setPlayerObject(PlayerObject playerObject) {
+        this.playerObject = playerObject;
     }
 }

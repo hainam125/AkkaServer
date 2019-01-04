@@ -1,4 +1,6 @@
-package games;
+package games.transform;
+
+import games.Matrix3x3;
 
 import java.util.ArrayList;
 import java.util.List;

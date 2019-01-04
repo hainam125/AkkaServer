@@ -1,4 +1,4 @@
-package games;
+package games.objects;
 
 public class GameObject {
     private static long currentId = 1;

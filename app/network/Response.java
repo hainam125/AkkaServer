@@ -1,4 +1,4 @@
-package data;
+package network;
 
 public class Response {
     public long id;

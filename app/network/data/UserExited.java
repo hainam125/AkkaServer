@@ -1,4 +1,4 @@
-package data;
+package network.data;
 
 import models.User;
 

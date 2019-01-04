@@ -1,4 +1,4 @@
-package games;
+package games.transform;
 
 public class Quaternion {
     public static Quaternion zero = new Quaternion(0, 0, 0, 1);
