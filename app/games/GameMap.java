@@ -1,12 +1,12 @@
 package games;
 
+import games.network.entity.NewEntity;
+import games.network.entity.SnapShot;
 import games.objects.Obstacle;
 import games.objects.PlayerObject;
 import games.objects.Projectile;
 import games.transform.Quaternion;
-import games.transform.Transform;
 import games.transform.Vector3;
-import play.api.Play;
 
 import java.util.*;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -16,7 +16,6 @@ public class GameMap {
     public List<PlayerObject> playerObjects;
     public List<Projectile> movingObjects;
 
-
     private HashMap<PlayerObject, HashSet<PlayerObject>> overlapTransforms;
 
     public GameMap(){
@@ -24,6 +23,15 @@ public class GameMap {
         movingObjects = new CopyOnWriteArrayList<>();
         overlapTransforms = new HashMap<>();
         createWalls();
+    }
+
+    private void createWalls(){
+        obstacles = new ArrayList<>();
+        obstacles.add(new Obstacle(new Vector3(10f, 0f, 0.5f), new Vector3(1.5f, 1f, 3.5f), Quaternion.zero));
+        obstacles.add(new Obstacle(new Vector3(0f, 0f, 130f), new Vector3(270f, 1f, 4f), Quaternion.zero));
+        obstacles.add(new Obstacle(new Vector3(0f, 0f, -130f), new Vector3(270f, 1f, 4f), Quaternion.zero));
+        obstacles.add(new Obstacle(new Vector3(-130f, 0f, 0f), new Vector3(4f, 1f, 270f), Quaternion.zero));
+        obstacles.add(new Obstacle(new Vector3(130f, 0f, 0f), new Vector3(4f, 1f, 270f), Quaternion.zero));
     }
 
     public void removePlayerObject(PlayerObject playerObject) {
@@ -102,12 +110,41 @@ public class GameMap {
         return false;
     }
 
-    private void createWalls(){
-        obstacles = new ArrayList<>();
-        obstacles.add(new Obstacle(new Vector3(10f, 0f, 0.5f), new Vector3(1.5f, 1f, 3.5f), Quaternion.zero));
-        obstacles.add(new Obstacle(new Vector3(0f, 0f, 130f), new Vector3(270f, 1f, 4f), Quaternion.zero));
-        obstacles.add(new Obstacle(new Vector3(0f, 0f, -130f), new Vector3(270f, 1f, 4f), Quaternion.zero));
-        obstacles.add(new Obstacle(new Vector3(-130f, 0f, 0f), new Vector3(4f, 1f, 270f), Quaternion.zero));
-        obstacles.add(new Obstacle(new Vector3(130f, 0f, 0f), new Vector3(4f, 1f, 270f), Quaternion.zero));
+    public SnapShot currentMapStatus(){
+        ArrayList<NewEntity> entities = new ArrayList<>();
+        for(PlayerObject object : playerObjects){
+            NewEntity entity = new NewEntity(
+                    object.getId(),
+                    PlayerObject.PrefabId,
+                    object.transform.rotation,
+                    object.transform.position,
+                    object.transform.bound
+            );
+            entities.add(entity);
+        }
+        for(Obstacle object : obstacles){
+            NewEntity entity = new NewEntity(
+                    object.getId(),
+                    Obstacle.PrefabId,
+                    object.transform.rotation,
+                    object.transform.position,
+                    object.transform.bound
+            );
+            entities.add(entity);
+        }
+
+        for(Projectile object : movingObjects){
+            NewEntity entity = new NewEntity(
+                    object.getId(),
+                    Projectile.PrefabId,
+                    object.transform.rotation,
+                    object.transform.position,
+                    object.transform.bound
+            );
+            entities.add(entity);
+        }
+        SnapShot snapShot = new SnapShot();
+        snapShot.newEntities = entities;
+        return snapShot;
     }
 }

@@ -7,7 +7,6 @@ import akka.actor.Props;
 import com.fasterxml.jackson.databind.JsonNode;
 import network.*;
 import games.*;
-import games.objects.Obstacle;
 import games.objects.PlayerObject;
 import games.objects.Projectile;
 import games.transform.Transform;
@@ -52,7 +51,7 @@ public class RoomActor extends AbstractActor {
     public void preStart() throws Exception{
         super.preStart();
         long time = 1000 / tick;
-        gameLoop = getContext().getSystem().scheduler().schedule(Duration.ZERO, Duration.ofMillis(time), new GameLoop(), getContext().getSystem().dispatcher());
+        gameLoop = getContext().getSystem().scheduler().schedule(Duration.ZERO, Duration.ofMillis(time), new GameLoop(time), getContext().getSystem().dispatcher());
     }
 
     @Override
@@ -70,7 +69,7 @@ public class RoomActor extends AbstractActor {
             PlayerObject playerObject = gameMap.createPlayerObject();
             userRef.setPlayerObject(playerObject);
 
-            SnapShot snapShot = currentRoomStatus();
+            SnapShot snapShot = gameMap.currentMapStatus();
             String snapShotString = Json.toJson(snapShot).toString();
 
             if(data.isCreated()){
@@ -140,46 +139,11 @@ public class RoomActor extends AbstractActor {
         commandsSoFar.put(userRef, command.id);
     }
 
-    private SnapShot currentRoomStatus(){
-        ArrayList<NewEntity> syncEntities = new ArrayList<>();
-        for(PlayerObject object : gameMap.playerObjects){
-            NewEntity entity = new NewEntity(
-                    object.getId(),
-                    PlayerObject.PrefabId,
-                    object.transform.rotation,
-                    object.transform.position,
-                    object.transform.bound
-            );
-            syncEntities.add(entity);
-        }
-        for(Obstacle object : gameMap.obstacles){
-            NewEntity entity = new NewEntity(
-                    object.getId(),
-                    Obstacle.PrefabId,
-                    object.transform.rotation,
-                    object.transform.position,
-                    object.transform.bound
-            );
-            syncEntities.add(entity);
-        }
-
-        for(Projectile object : gameMap.movingObjects){
-            NewEntity entity = new NewEntity(
-                    object.getId(),
-                    Projectile.PrefabId,
-                    object.transform.rotation,
-                    object.transform.position,
-                    object.transform.bound
-            );
-            syncEntities.add(entity);
-        }
-        SnapShot snapShot = new SnapShot();
-        snapShot.newEntities = syncEntities;
-        return snapShot;
-    }
-
     private class GameLoop implements Runnable {
-
+        private float deltaTime;
+        private GameLoop(long time){
+            deltaTime = time / 1000f;
+        }
         public void run() {
             ArrayList<ExistingEntity> syncEntities = new ArrayList<>();
             ArrayList<NewEntity> newEntities = new ArrayList<>();
@@ -187,7 +151,7 @@ public class RoomActor extends AbstractActor {
 
             for (Iterator<PlayerObject> iter = gameMap.playerObjects.iterator(); iter.hasNext();) {
                 PlayerObject object = iter.next();
-                object.updateGame(gameMap);
+                object.updateGame(deltaTime, gameMap);
                 if (object.isDirty) {
                     ExistingEntity entity = new ExistingEntity(
                             object.getId(),
@@ -203,7 +167,6 @@ public class RoomActor extends AbstractActor {
             ArrayList<Projectile> deadProjectiles = new ArrayList<>();
             for (Iterator<Projectile> iter = gameMap.movingObjects.iterator(); iter.hasNext();) {
                 Projectile object = iter.next();
-                Vector3 oldPos = object.transform.position;
 
                 if(object.isNew) {
                     object.isNew = false;
@@ -226,6 +189,10 @@ public class RoomActor extends AbstractActor {
                     PlayerObject playerObject = gameMap.checkPlayerCollision(object);
                     if(playerObject != null){
                         object.isDead = true;
+                        playerObject.decreaseHp();
+                        if(playerObject.isDeath()) {
+                            playerObject.reset();
+                        }
                     }
                     else if(gameMap.checkObstacleCollision(object)) {
                         object.isDead = true;

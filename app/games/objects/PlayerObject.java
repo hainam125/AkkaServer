@@ -7,9 +7,6 @@ import games.transform.Quaternion;
 import games.transform.Transform;
 import games.transform.Vector3;
 
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
@@ -18,18 +15,47 @@ public class PlayerObject {
     private static final Vector3 RotateSpeed = new Vector3(0f, 100f, 0f).mul((float)(Math.PI / 180f));
     private static final float Speed = 7f;
     private static final float MoveStep = 0.1f;
+    private static final float TotalRespawnTime = 3f;
+    private static final int MaxHp = 5;
 
     private long id;
     private Queue<Command> commands = new ConcurrentLinkedQueue<>();
-    public boolean isDirty = true;
+    public boolean isDirty;
     public Transform transform = new Transform();
+    private int hp;
+    private float respawnTimeLeft;
 
     public PlayerObject(){
         id = GameObject.getCurrentId();
+        respawnTimeLeft = 0f;
+        isDirty = true;
+        respawn();
     }
 
     public long getId() {
         return id;
+    }
+
+    public void decreaseHp(){
+        hp--;
+    }
+
+    public int getHp(){
+        return hp;
+    }
+
+    public boolean isDeath() {
+        return hp <= 0;
+    }
+
+    public void reset(){
+        transform.position = Vector3.zero;
+        isDirty = true;
+        respawnTimeLeft = TotalRespawnTime;
+    }
+
+    private void respawn() {
+        hp = MaxHp;
     }
 
     public void receiveCommand(Command command)
@@ -37,8 +63,15 @@ public class PlayerObject {
         commands.add(command);
     }
 
-    public void updateGame(GameMap gameMap)
+    public void updateGame(float deltaTime, GameMap gameMap)
     {
+        if(respawnTimeLeft > 0){
+            respawnTimeLeft -= deltaTime;
+            if(respawnTimeLeft <= 0) {
+                respawn();
+            }
+            return;
+        }
         while(commands.size() > 0) {
             handleCommand(commands.poll(), gameMap);
         }
