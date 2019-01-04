@@ -1,6 +1,7 @@
 package games;
 
 import games.network.entity.NewEntity;
+import games.network.entity.NewPlayer;
 import games.network.entity.SnapShot;
 import games.objects.Obstacle;
 import games.objects.PlayerObject;
@@ -44,9 +45,14 @@ public class GameMap {
     }
 
     public PlayerObject createPlayerObject(){
-        PlayerObject playerObject = new PlayerObject();
+        PlayerObject playerObject = new PlayerObject(this);
+        return playerObject;
+    }
+
+    public void setNewPosition(PlayerObject playerObject) {
         HashSet<PlayerObject> overlap = new HashSet<>();
         for(PlayerObject o : playerObjects){
+            if(o == playerObject) continue;
             if(playerObject.transform.checkCollision(o.transform)){
                 overlap.add(o);
                 if(!overlapTransforms.containsKey(o)){
@@ -56,7 +62,6 @@ public class GameMap {
             }
         }
         if(overlap.size() > 0) overlapTransforms.put(playerObject, overlap);
-        return playerObject;
     }
 
     public void addMovingObject(Projectile object) {
@@ -74,7 +79,7 @@ public class GameMap {
 
     public PlayerObject checkPlayerCollision(Projectile projectile) {
         for(PlayerObject o : playerObjects){
-            if(projectile.getPlayerObject() != o && projectile.transform.checkCollision(o.transform)){
+            if(projectile.getPlayerObject() != o && !o.isDeath() && projectile.transform.checkCollision(o.transform)){
                 return o;
             }
         }
@@ -83,7 +88,7 @@ public class GameMap {
 
     public boolean checkPlayerCollision(PlayerObject player) {
         for(PlayerObject o : playerObjects){
-            if(o == player) continue;
+            if(o == player || o.isDeath()) continue;
             if(player.transform.checkCollision(o.transform)) {
                 if(!overlapTransforms.containsKey(player)) {
                     return true;
@@ -111,16 +116,18 @@ public class GameMap {
     }
 
     public SnapShot currentMapStatus(){
+        ArrayList<NewPlayer> players = new ArrayList<>();
         ArrayList<NewEntity> entities = new ArrayList<>();
         for(PlayerObject object : playerObjects){
-            NewEntity entity = new NewEntity(
+            NewPlayer entity = new NewPlayer(
                     object.getId(),
                     PlayerObject.PrefabId,
+                    object.getHp(),
                     object.transform.rotation,
                     object.transform.position,
                     object.transform.bound
             );
-            entities.add(entity);
+            players.add(entity);
         }
         for(Obstacle object : obstacles){
             NewEntity entity = new NewEntity(
@@ -145,6 +152,7 @@ public class GameMap {
         }
         SnapShot snapShot = new SnapShot();
         snapShot.newEntities = entities;
+        snapShot.newPlayers = players;
         return snapShot;
     }
 }

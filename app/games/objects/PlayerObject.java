@@ -18,17 +18,19 @@ public class PlayerObject {
     private static final float TotalRespawnTime = 3f;
     private static final int MaxHp = 5;
 
+    public Transform transform = new Transform();
+
     private long id;
     private Queue<Command> commands = new ConcurrentLinkedQueue<>();
-    public boolean isDirty;
-    public Transform transform = new Transform();
+    private boolean isDirty;
     private int hp;
     private float respawnTimeLeft;
+    private GameMap gameMap;
 
-    public PlayerObject(){
+    public PlayerObject(GameMap map){
         id = GameObject.getCurrentId();
+        gameMap = map;
         respawnTimeLeft = 0f;
-        isDirty = true;
         respawn();
     }
 
@@ -37,6 +39,7 @@ public class PlayerObject {
     }
 
     public void decreaseHp(){
+        isDirty = true;
         hp--;
     }
 
@@ -48,14 +51,24 @@ public class PlayerObject {
         return hp <= 0;
     }
 
+    public boolean checkDirty(){
+        if(isDirty){
+            isDirty = false;
+            return true;
+        }
+        return false;
+    }
+
     public void reset(){
-        transform.position = Vector3.zero;
         isDirty = true;
         respawnTimeLeft = TotalRespawnTime;
     }
 
     private void respawn() {
+        transform.position = Vector3.zero;
         hp = MaxHp;
+        isDirty = true;
+        gameMap.setNewPosition(this);
     }
 
     public void receiveCommand(Command command)
@@ -63,7 +76,7 @@ public class PlayerObject {
         commands.add(command);
     }
 
-    public void updateGame(float deltaTime, GameMap gameMap)
+    public void updateGame(float deltaTime)
     {
         if(respawnTimeLeft > 0){
             respawnTimeLeft -= deltaTime;
@@ -73,29 +86,29 @@ public class PlayerObject {
             return;
         }
         while(commands.size() > 0) {
-            handleCommand(commands.poll(), gameMap);
+            handleCommand(commands.poll());
         }
     }
 
-    private void handleCommand(Command command, GameMap gameMap)
+    private void handleCommand(Command command)
     {
         isDirty = true;
         byte code = command.keyCode;
         if(KeyCode.isUp(code)){
-            handleMovement(1f, gameMap);
+            handleMovement(1f);
         }
         else if(KeyCode.isDown(code)) {
-            handleMovement(-1f, gameMap);
+            handleMovement(-1f);
         }
         if(KeyCode.isRight(code)){
-            handleRotation(1f, gameMap);
+            handleRotation(1f);
         }
         else if(KeyCode.isLeft(code)) {
-            handleRotation(-1f, gameMap);
+            handleRotation(-1f);
         }
     }
 
-    private void handleRotation(float direction, GameMap gameMap) {
+    private void handleRotation(float direction) {
         Quaternion oldRot = transform.rotation;
         transform.rotation = transform.rotation.add(RotateSpeed.mul(direction * RoomActor.deltaTime));
 
@@ -109,7 +122,7 @@ public class PlayerObject {
         }
     }
 
-    private void handleMovement(float direction, GameMap gameMap) {
+    private void handleMovement(float direction) {
         float current = 0f;
         while (current <= Speed) {
             current += MoveStep;

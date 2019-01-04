@@ -5,6 +5,7 @@ import akka.actor.ActorRef;
 import akka.actor.Cancellable;
 import akka.actor.Props;
 import com.fasterxml.jackson.databind.JsonNode;
+import games.network.entity.*;
 import network.*;
 import games.*;
 import games.objects.PlayerObject;
@@ -16,10 +17,6 @@ import network.data.*;
 import models.User;
 import models.UserRef;
 import games.network.data.Optimazation;
-import games.network.entity.DestroyedEntity;
-import games.network.entity.ExistingEntity;
-import games.network.entity.NewEntity;
-import games.network.entity.SnapShot;
 import play.libs.Json;
 
 import java.time.Duration;
@@ -145,26 +142,17 @@ public class RoomActor extends AbstractActor {
             deltaTime = time / 1000f;
         }
         public void run() {
-            ArrayList<ExistingEntity> syncEntities = new ArrayList<>();
-            ArrayList<NewEntity> newEntities = new ArrayList<>();
+            ArrayList<ExistingEntity> existingProjectiles = new ArrayList<>();
+            ArrayList<ExistingPlayer> existingPlayers = new ArrayList<>();
+            ArrayList<NewEntity> newProjectiles = new ArrayList<>();
             ArrayList<DestroyedEntity> removeEntities = new ArrayList<>();
+            ArrayList<Projectile> deadProjectiles = new ArrayList<>();
 
             for (Iterator<PlayerObject> iter = gameMap.playerObjects.iterator(); iter.hasNext();) {
                 PlayerObject object = iter.next();
-                object.updateGame(deltaTime, gameMap);
-                if (object.isDirty) {
-                    ExistingEntity entity = new ExistingEntity(
-                            object.getId(),
-                            PlayerObject.PrefabId,
-                            Optimazation.CompressRot(object.transform.rotation),
-                            Optimazation.CompressPos2(object.transform.position)
-                    );
-                    syncEntities.add(entity);
-                    object.isDirty = false;
-                }
+                object.updateGame(deltaTime);
             }
 
-            ArrayList<Projectile> deadProjectiles = new ArrayList<>();
             for (Iterator<Projectile> iter = gameMap.movingObjects.iterator(); iter.hasNext();) {
                 Projectile object = iter.next();
 
@@ -177,7 +165,7 @@ public class RoomActor extends AbstractActor {
                             object.transform.position,
                             object.transform.bound
                     );
-                    newEntities.add(entity);
+                    newProjectiles.add(entity);
                 }
                 else if(object.isDead) {
                     DestroyedEntity entity = new DestroyedEntity(object.getId());
@@ -203,14 +191,29 @@ public class RoomActor extends AbstractActor {
                             Optimazation.CompressRot(object.transform.rotation),
                             Optimazation.CompressPos2(object.transform.position)
                     );
-                    syncEntities.add(entity);
+                    existingProjectiles.add(entity);
                 }
             }
             gameMap.movingObjects.removeAll(deadProjectiles);
 
+            for (Iterator<PlayerObject> iter = gameMap.playerObjects.iterator(); iter.hasNext();) {
+                PlayerObject object = iter.next();
+                if (object.checkDirty()) {
+                    ExistingPlayer entity = new ExistingPlayer(
+                            object.getId(),
+                            PlayerObject.PrefabId,
+                            object.getHp(),
+                            Optimazation.CompressRot(object.transform.rotation),
+                            Optimazation.CompressPos2(object.transform.position)
+                    );
+                    existingPlayers.add(entity);
+                }
+            }
+
             SnapShot snapShot = new SnapShot();
-            snapShot.existingEntities = syncEntities;
-            snapShot.newEntities = newEntities;
+            snapShot.existingEntities = existingProjectiles;
+            snapShot.existingPlayers = existingPlayers;
+            snapShot.newEntities = newProjectiles;
             snapShot.destroyedEntities = removeEntities;
 
             for (Map.Entry<UserRef, Long> entry : commandsSoFar.entrySet()) {
