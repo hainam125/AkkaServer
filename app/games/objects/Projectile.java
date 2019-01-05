@@ -5,7 +5,7 @@ import games.transform.Transform;
 import games.transform.Vector3;
 
 public class Projectile {
-    public static final float Speed = 13f;
+    public static final float Speed = 18f;
     public static final int PrefabId = 2;
     private long id;
     private PlayerObject playerObject;

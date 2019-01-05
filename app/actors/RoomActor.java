@@ -63,7 +63,7 @@ public class RoomActor extends AbstractActor {
             long userId = userRef.getUser().getId();
             websockets.put(userId, userRef.getOut());
 
-            PlayerObject playerObject = gameMap.createPlayerObject();
+            PlayerObject playerObject = new PlayerObject(gameMap);
             userRef.setPlayerObject(playerObject);
 
             SnapShot snapShot = gameMap.currentMapStatus();
@@ -88,7 +88,7 @@ public class RoomActor extends AbstractActor {
                 userRef.getOut().tell(Json.toJson(response), ActorRef.noSender());
             }
 
-            gameMap.playerObjects.add(playerObject);//add here to avoid duplicate
+            gameMap.addPlayerObject(playerObject);//add here to avoid duplicate
             commandsSoFar.put(userRef, 0L);
             objectMap.put(userRef, playerObject);
         }).match(Send.class, data -> {
@@ -125,7 +125,7 @@ public class RoomActor extends AbstractActor {
             gameMap.addMovingObject(new Projectile(
                     forward,
                     transform.position.add(forward.mul(0.80f)),
-                    Vector3.one.mul(0.25f),
+                    new Vector3(0.25f, 0.25f, 0.35f),
                     transform.rotation,
                     object
             ));
@@ -142,79 +142,7 @@ public class RoomActor extends AbstractActor {
             deltaTime = time / 1000f;
         }
         public void run() {
-            ArrayList<ExistingEntity> existingProjectiles = new ArrayList<>();
-            ArrayList<ExistingPlayer> existingPlayers = new ArrayList<>();
-            ArrayList<NewEntity> newProjectiles = new ArrayList<>();
-            ArrayList<DestroyedEntity> removeEntities = new ArrayList<>();
-            ArrayList<Projectile> deadProjectiles = new ArrayList<>();
-
-            for (Iterator<PlayerObject> iter = gameMap.playerObjects.iterator(); iter.hasNext();) {
-                PlayerObject object = iter.next();
-                object.updateGame(deltaTime);
-            }
-
-            for (Iterator<Projectile> iter = gameMap.movingObjects.iterator(); iter.hasNext();) {
-                Projectile object = iter.next();
-
-                if(object.isNew) {
-                    object.isNew = false;
-                    NewEntity entity = new NewEntity(
-                            object.getId(),
-                            Projectile.PrefabId,
-                            object.transform.rotation,
-                            object.transform.position,
-                            object.transform.bound
-                    );
-                    newProjectiles.add(entity);
-                }
-                else if(object.isDead) {
-                    DestroyedEntity entity = new DestroyedEntity(object.getId());
-                    removeEntities.add(entity);
-                    deadProjectiles.add(object);
-                }
-                else  {
-                    object.transform.position = object.transform.position.add(object.direction.mul(Projectile.Speed).mul(1f / tick));
-                    PlayerObject playerObject = gameMap.checkPlayerCollision(object);
-                    if(playerObject != null){
-                        object.isDead = true;
-                        playerObject.decreaseHp();
-                        if(playerObject.isDeath()) {
-                            playerObject.reset();
-                        }
-                    }
-                    else if(gameMap.checkObstacleCollision(object)) {
-                        object.isDead = true;
-                    }
-                    ExistingEntity entity = new ExistingEntity(
-                            object.getId(),
-                            Projectile.PrefabId,
-                            Optimazation.CompressRot(object.transform.rotation),
-                            Optimazation.CompressPos2(object.transform.position)
-                    );
-                    existingProjectiles.add(entity);
-                }
-            }
-            gameMap.movingObjects.removeAll(deadProjectiles);
-
-            for (Iterator<PlayerObject> iter = gameMap.playerObjects.iterator(); iter.hasNext();) {
-                PlayerObject object = iter.next();
-                if (object.checkDirty()) {
-                    ExistingPlayer entity = new ExistingPlayer(
-                            object.getId(),
-                            PlayerObject.PrefabId,
-                            object.getHp(),
-                            Optimazation.CompressRot(object.transform.rotation),
-                            Optimazation.CompressPos2(object.transform.position)
-                    );
-                    existingPlayers.add(entity);
-                }
-            }
-
-            SnapShot snapShot = new SnapShot();
-            snapShot.existingEntities = existingProjectiles;
-            snapShot.existingPlayers = existingPlayers;
-            snapShot.newEntities = newProjectiles;
-            snapShot.destroyedEntities = removeEntities;
+            SnapShot snapShot = gameMap.updateGame(deltaTime);
 
             for (Map.Entry<UserRef, Long> entry : commandsSoFar.entrySet()) {
                 SnapShot clone = snapShot.clone();

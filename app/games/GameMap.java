@@ -1,8 +1,7 @@
 package games;
 
-import games.network.entity.NewEntity;
-import games.network.entity.NewPlayer;
-import games.network.entity.SnapShot;
+import games.network.data.Optimazation;
+import games.network.entity.*;
 import games.objects.Obstacle;
 import games.objects.PlayerObject;
 import games.objects.Projectile;
@@ -13,9 +12,9 @@ import java.util.*;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 public class GameMap {
-    public List<Obstacle> obstacles;
-    public List<PlayerObject> playerObjects;
-    public List<Projectile> movingObjects;
+    private List<Obstacle> obstacles;
+    private List<PlayerObject> playerObjects;
+    private List<Projectile> movingObjects;
 
     private HashMap<PlayerObject, HashSet<PlayerObject>> overlapTransforms;
 
@@ -28,7 +27,12 @@ public class GameMap {
 
     private void createWalls(){
         obstacles = new ArrayList<>();
+
         obstacles.add(new Obstacle(new Vector3(10f, 0f, 0.5f), new Vector3(1.5f, 1f, 3.5f), Quaternion.zero));
+
+        obstacles.add(new Obstacle(new Vector3(24f, 0f, 10f), new Vector3(2f, 1f, 30f), Quaternion.zero));
+        obstacles.add(new Obstacle(new Vector3(-22f, 0f, 30f), new Vector3(25f, 1f, 2f), new Quaternion(0f, 0.38275f, 0f, 0.92385f)));
+
         obstacles.add(new Obstacle(new Vector3(0f, 0f, 50f), new Vector3(100f, 1f, 4f), Quaternion.zero));
         obstacles.add(new Obstacle(new Vector3(0f, 0f, -50f), new Vector3(100f, 1f, 4f), Quaternion.zero));
         obstacles.add(new Obstacle(new Vector3(-50f, 0f, 0f), new Vector3(4f, 1f, 100f), Quaternion.zero));
@@ -44,9 +48,8 @@ public class GameMap {
         }
     }
 
-    public PlayerObject createPlayerObject(){
-        PlayerObject playerObject = new PlayerObject(this);
-        return playerObject;
+    public void addPlayerObject(PlayerObject playerObject) {
+        playerObjects.add(playerObject);
     }
 
     public void setNewPosition(PlayerObject playerObject) {
@@ -68,7 +71,22 @@ public class GameMap {
         movingObjects.add(object);
     }
 
-    public boolean checkObstacleCollision(Projectile projectile) {
+    private boolean checkProjectileCollisionWithOthers(Projectile object) {
+        PlayerObject playerObject = checkPlayerCollision(object);
+        if(playerObject != null){
+            playerObject.decreaseHp();
+            if(playerObject.isDeath()) {
+                playerObject.reset();
+            }
+            return true;
+        }
+        else if(checkObstacleCollision(object)) {
+            return true;
+        }
+        return false;
+    }
+
+    private boolean checkObstacleCollision(Projectile projectile) {
         for(Obstacle obstacle : obstacles){
             if(projectile.transform.checkCollision(obstacle.transform)){
                 return true;
@@ -77,7 +95,7 @@ public class GameMap {
         return false;
     }
 
-    public PlayerObject checkPlayerCollision(Projectile projectile) {
+    private PlayerObject checkPlayerCollision(Projectile projectile) {
         for(PlayerObject o : playerObjects){
             if(projectile.getPlayerObject() != o && !o.isDeath() && projectile.transform.checkCollision(o.transform)){
                 return o;
@@ -113,6 +131,79 @@ public class GameMap {
             }
         }
         return false;
+    }
+
+    public SnapShot updateGame(float deltaTime){
+        ArrayList<ExistingEntity> existingProjectiles = new ArrayList<>();
+        ArrayList<ExistingPlayer> existingPlayers = new ArrayList<>();
+        ArrayList<NewEntity> newProjectiles = new ArrayList<>();
+        ArrayList<DestroyedEntity> removeEntities = new ArrayList<>();
+        ArrayList<Projectile> deadProjectiles = new ArrayList<>();
+
+        for (Iterator<PlayerObject> iter = playerObjects.iterator(); iter.hasNext();) {
+            PlayerObject object = iter.next();
+            object.updateGame(deltaTime);
+        }
+
+        for (Iterator<Projectile> iter = movingObjects.iterator(); iter.hasNext();) {
+            Projectile object = iter.next();
+
+            if(object.isNew) {
+                if(checkProjectileCollisionWithOthers(object)){
+                    deadProjectiles.add(object);
+                }
+                else {
+                    object.isNew = false;
+                    object.transform.position = object.transform.position.add(object.direction.mul(Projectile.Speed).mul(deltaTime * 0.25f));
+                    NewEntity entity = new NewEntity(
+                            object.getId(),
+                            Projectile.PrefabId,
+                            object.transform.rotation,
+                            object.transform.position,
+                            object.transform.bound
+                    );
+                    newProjectiles.add(entity);
+                }
+            }
+            else if(object.isDead) {
+                DestroyedEntity entity = new DestroyedEntity(object.getId());
+                removeEntities.add(entity);
+                deadProjectiles.add(object);
+            }
+            else  {
+                object.transform.position = object.transform.position.add(object.direction.mul(Projectile.Speed).mul(deltaTime));
+                if(checkProjectileCollisionWithOthers(object)) object.isDead = true;
+                ExistingEntity entity = new ExistingEntity(
+                        object.getId(),
+                        Projectile.PrefabId,
+                        Optimazation.CompressRot(object.transform.rotation),
+                        Optimazation.CompressPos2(object.transform.position)
+                );
+                existingProjectiles.add(entity);
+            }
+        }
+        movingObjects.removeAll(deadProjectiles);
+
+        for (Iterator<PlayerObject> iter = playerObjects.iterator(); iter.hasNext();) {
+            PlayerObject object = iter.next();
+            if (object.checkDirty()) {
+                ExistingPlayer entity = new ExistingPlayer(
+                        object.getId(),
+                        PlayerObject.PrefabId,
+                        object.getHp(),
+                        Optimazation.CompressRot(object.transform.rotation),
+                        Optimazation.CompressPos2(object.transform.position)
+                );
+                existingPlayers.add(entity);
+            }
+        }
+
+        SnapShot snapShot = new SnapShot();
+        snapShot.existingEntities = existingProjectiles;
+        snapShot.existingPlayers = existingPlayers;
+        snapShot.newEntities = newProjectiles;
+        snapShot.destroyedEntities = removeEntities;
+        return snapShot;
     }
 
     public SnapShot currentMapStatus(){
