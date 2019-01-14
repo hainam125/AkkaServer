@@ -71,39 +71,6 @@ public class GameMap {
         movingObjects.add(object);
     }
 
-    private boolean checkProjectileCollisionWithOthers(Projectile object) {
-        PlayerObject playerObject = checkPlayerCollision(object);
-        if(playerObject != null){
-            playerObject.decreaseHp();
-            if(playerObject.isDeath()) {
-                playerObject.reset();
-            }
-            return true;
-        }
-        else if(checkObstacleCollision(object)) {
-            return true;
-        }
-        return false;
-    }
-
-    private boolean checkObstacleCollision(Projectile projectile) {
-        for(Obstacle obstacle : obstacles){
-            if(projectile.transform.checkCollision(obstacle.transform)){
-                return true;
-            }
-        }
-        return false;
-    }
-
-    private PlayerObject checkPlayerCollision(Projectile projectile) {
-        for(PlayerObject o : playerObjects){
-            if(projectile.getPlayerObject() != o && !o.isDeath() && projectile.transform.checkCollision(o.transform)){
-                return o;
-            }
-        }
-        return null;
-    }
-
     public boolean checkPlayerCollision(PlayerObject player) {
         for(PlayerObject o : playerObjects){
             if(o == player || o.isDeath()) continue;
@@ -149,7 +116,7 @@ public class GameMap {
             Projectile object = iter.next();
 
             if(object.isNew) {
-                if(checkProjectileCollisionWithOthers(object)){
+                if(object.checkProjectileCollisionWithOthers(obstacles, playerObjects)){
                     deadProjectiles.add(object);
                 }
                 else {
@@ -171,8 +138,7 @@ public class GameMap {
                 deadProjectiles.add(object);
             }
             else  {
-                object.transform.position = object.transform.position.add(object.direction.mul(Projectile.Speed).mul(deltaTime));
-                if(checkProjectileCollisionWithOthers(object)) object.isDead = true;
+                object.handleMovement(obstacles, playerObjects, deltaTime);
                 ExistingEntity entity = new ExistingEntity(
                         object.getId(),
                         Projectile.PrefabId,

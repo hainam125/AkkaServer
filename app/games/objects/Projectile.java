@@ -1,10 +1,14 @@
 package games.objects;
 
+import games.GameMap;
 import games.transform.Quaternion;
 import games.transform.Transform;
 import games.transform.Vector3;
 
+import java.util.List;
+
 public class Projectile {
+    private static final float MoveStep = 0.1f;
     public static final float Speed = 18f;
     public static final int PrefabId = 2;
     private long id;
@@ -28,7 +32,50 @@ public class Projectile {
         return id;
     }
 
-    public PlayerObject getPlayerObject() {
-        return playerObject;
+    public void handleMovement(List<Obstacle> obstacles, List<PlayerObject> playerObjects, float deltaTime){
+        float current = 0f;
+        while (current <= Speed) {
+            current += MoveStep;
+            float step = current > Speed ? Speed - (current - MoveStep) : MoveStep;
+
+            transform.position = transform.position.add(direction.mul(step * deltaTime));
+            if(checkProjectileCollisionWithOthers(obstacles, playerObjects)){
+                isDead = true;
+                break;
+            }
+        }
+    }
+
+    public boolean checkProjectileCollisionWithOthers(List<Obstacle> obstacles, List<PlayerObject> playerObjects) {
+        PlayerObject playerObject = checkPlayerCollision(playerObjects);
+        if(playerObject != null){
+            playerObject.decreaseHp();
+            if(playerObject.isDeath()) {
+                playerObject.reset();
+            }
+            return true;
+        }
+        else if(checkObstacleCollision(obstacles)) {
+            return true;
+        }
+        return false;
+    }
+
+    private boolean checkObstacleCollision(List<Obstacle> obstacles) {
+        for(Obstacle obstacle : obstacles){
+            if(transform.checkCollision(obstacle.transform)){
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private PlayerObject checkPlayerCollision(List<PlayerObject> playerObjects) {
+        for(PlayerObject o : playerObjects){
+            if(playerObject != o && !o.isDeath() && transform.checkCollision(o.transform)){
+                return o;
+            }
+        }
+        return null;
     }
 }
