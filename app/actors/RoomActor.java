@@ -123,7 +123,7 @@ public class RoomActor extends AbstractActor {
             Vector3 forward = transform.getForward();
             gameMap.addMovingObject(new Projectile(
                     forward,
-                    transform.position.add(forward.mul(0.80f)),
+                    transform.position.add(forward.mul(0.80f)).add(new Vector3(0f, 0.2f, 0f)),
                     new Vector3(0.25f, 0.25f, 0.35f),
                     transform.rotation,
                     object
