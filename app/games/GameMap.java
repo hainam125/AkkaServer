@@ -28,15 +28,15 @@ public class GameMap {
     private void createWalls(){
         obstacles = new ArrayList<>();
 
-        obstacles.add(new Obstacle(new Vector3(10f, 0f, 0.5f), new Vector3(1.5f, 1f, 3.5f), Quaternion.zero));
+        obstacles.add(new Obstacle(new Vector3(10f, 0f, 0.5f), new Vector3(1.5f, 3f, 3.5f), Quaternion.zero));
 
-        obstacles.add(new Obstacle(new Vector3(24f, 0f, 10f), new Vector3(2f, 1f, 30f), Quaternion.zero));
-        obstacles.add(new Obstacle(new Vector3(-22f, 0f, 30f), new Vector3(25f, 1f, 2f), new Quaternion(0f, 0.38275f, 0f, 0.92385f)));
+        obstacles.add(new Obstacle(new Vector3(24f, 0f, 10f), new Vector3(2f, 3f, 30f), Quaternion.zero));
+        obstacles.add(new Obstacle(new Vector3(-22f, 0f, 30f), new Vector3(25f, 3f, 2f), new Quaternion(0f, 0.38275f, 0f, 0.92385f)));
 
-        obstacles.add(new Obstacle(new Vector3(0f, 0f, 50f), new Vector3(100f, 1f, 4f), Quaternion.zero));
-        obstacles.add(new Obstacle(new Vector3(0f, 0f, -50f), new Vector3(100f, 1f, 4f), Quaternion.zero));
-        obstacles.add(new Obstacle(new Vector3(-50f, 0f, 0f), new Vector3(4f, 1f, 100f), Quaternion.zero));
-        obstacles.add(new Obstacle(new Vector3(50f, 0f, 0f), new Vector3(4f, 1f, 100f), Quaternion.zero));
+        obstacles.add(new Obstacle(new Vector3(0f, 0f, 50f), new Vector3(100f, 3f, 4f), Quaternion.zero));
+        obstacles.add(new Obstacle(new Vector3(0f, 0f, -50f), new Vector3(100f, 3f, 4f), Quaternion.zero));
+        obstacles.add(new Obstacle(new Vector3(-50f, 0f, 0f), new Vector3(4f, 3f, 100f), Quaternion.zero));
+        obstacles.add(new Obstacle(new Vector3(50f, 0f, 0f), new Vector3(4f, 3f, 100f), Quaternion.zero));
     }
 
     public void removePlayerObject(PlayerObject playerObject) {

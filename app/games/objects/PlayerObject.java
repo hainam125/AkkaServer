@@ -12,7 +12,7 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 
 public class PlayerObject {
     public static final int PrefabId = 0;
-    private static final Vector3 RotateSpeed = new Vector3(0f, 70f, 0f).mul((float)(Math.PI / 180f));
+    private static final Vector3 RotateSpeed = new Vector3(0f, 50f, 0f).mul((float)(Math.PI / 180f));
     private static final float Speed = 7f;
     private static final float MoveStep = 0.1f;
     private static final float TotalRespawnTime = 3f;
