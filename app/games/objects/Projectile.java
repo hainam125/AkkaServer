@@ -8,6 +8,7 @@ import games.transform.Vector3;
 import java.util.List;
 
 public class Projectile {
+    private static final float MaxDistance = 20f;
     private static final float MoveStep = 0.1f;
     public static final float Speed = 18f;
     public static final int PrefabId = 2;
@@ -17,6 +18,7 @@ public class Projectile {
     public Vector3 direction;
     public boolean isDead;
     public boolean isNew;
+    private float distance;
 
     public Projectile(Vector3 direction, Vector3 position, Vector3 bound, Quaternion rotation, PlayerObject playerObject){
         this.id = GameObject.getCurrentId();
@@ -37,9 +39,10 @@ public class Projectile {
         while (current <= Speed) {
             current += MoveStep;
             float step = current > Speed ? Speed - (current - MoveStep) : MoveStep;
-
-            transform.position = transform.position.add(direction.mul(step * deltaTime));
-            if(checkProjectileCollisionWithOthers(obstacles, playerObjects)){
+            float dist = step * deltaTime;
+            distance += dist;
+            transform.position = transform.position.add(direction.mul(dist));
+            if(distance > MaxDistance || checkProjectileCollisionWithOthers(obstacles, playerObjects)){
                 isDead = true;
                 break;
             }
