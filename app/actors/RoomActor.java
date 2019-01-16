@@ -123,20 +123,7 @@ public class RoomActor extends AbstractActor {
 
     private void receiveCommand(UserRef userRef, Command command){
         PlayerObject object = userRef.getPlayerObject();
-        if(KeyCode.isSpace(command.keyCode)) {
-            Transform transform = object.transform;
-            Vector3 forward = transform.getForward();
-            gameMap.addMovingObject(new Projectile(
-                    forward,
-                    transform.position.add(forward.mul(0.80f)).add(new Vector3(0f, 0.2f, 0f)),
-                    new Vector3(0.25f, 0.25f, 0.35f),
-                    transform.rotation,
-                    object
-            ));
-        }
-        if(command.keyCode != KeyCode.Space.getValue()) {
-            object.receiveCommand(command);
-        }
+        object.receiveCommand(command);
         commandsSoFar.put(userRef, command.id);
     }
 

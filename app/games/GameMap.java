@@ -6,6 +6,7 @@ import games.objects.Obstacle;
 import games.objects.PlayerObject;
 import games.objects.Projectile;
 import games.transform.Quaternion;
+import games.transform.Transform;
 import games.transform.Vector3;
 
 import java.util.*;
@@ -39,6 +40,10 @@ public class GameMap {
         obstacles.add(new Obstacle(new Vector3(50f, 0f, 0f), new Vector3(4f, 3f, 100f), Quaternion.zero));
     }
 
+    public void addMovingObject(Projectile object) {
+        movingObjects.add(object);
+    }
+
     public void removePlayerObject(PlayerObject playerObject) {
         playerObjects.remove(playerObject);
         overlapTransforms.remove(playerObject);
@@ -65,10 +70,6 @@ public class GameMap {
             }
         }
         if(overlap.size() > 0) overlapTransforms.put(playerObject, overlap);
-    }
-
-    public void addMovingObject(Projectile object) {
-        movingObjects.add(object);
     }
 
     public boolean checkPlayerCollision(PlayerObject player) {

@@ -53,9 +53,6 @@ public class Projectile {
         PlayerObject playerObject = checkPlayerCollision(playerObjects);
         if(playerObject != null){
             playerObject.decreaseHp();
-            if(playerObject.isDeath()) {
-                playerObject.reset();
-            }
             return true;
         }
         else if(checkObstacleCollision(obstacles)) {

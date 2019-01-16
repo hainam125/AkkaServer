@@ -33,10 +33,7 @@ public class WebSocketActor extends AbstractActor {
     @Override
     public void postStop() throws Exception {
         super.postStop();
-        lobbyActor.tell(new Logout(userRef), ActorRef.noSender());
-        ActorRef room = userRef.getRoom();
-        if(room != null) room.tell(new Logout(userRef), ActorRef.noSender());
-        userRef.setPlayerObject(null);
+        logout();
         System.out.println("Logout...");
     }
 
@@ -59,6 +56,11 @@ public class WebSocketActor extends AbstractActor {
                 CreateRoom createRoom = Json.fromJson(actualObj, CreateRoom.class);
                 lobbyActor.tell(new NewRoom(createRoom.getName(), userRef.getUser().getId(), request.id, createRoom.getNb()), ActorRef.noSender());
             }
+            else if(request.type.equals(LeaveRoom.class.getSimpleName())){
+                leaveRoom();
+                Response response = new Response(request.id, "", LeaveRoom.class.getSimpleName());
+                userRef.getOut().tell(Json.toJson(response), ActorRef.noSender());
+            }
             else if(request.type.equals(RoomList.class.getSimpleName())){
                 lobbyActor.tell(new GetRooms(userRef.getUser().getId(), request.id), ActorRef.noSender());
             }
@@ -71,5 +73,16 @@ public class WebSocketActor extends AbstractActor {
             }
 
         }).build();
+    }
+
+    private void logout(){
+        lobbyActor.tell(new Logout(userRef), ActorRef.noSender());
+        leaveRoom();
+    }
+
+    private void leaveRoom(){
+        ActorRef room = userRef.getRoom();
+        if(room != null) room.tell(new Logout(userRef), ActorRef.noSender());
+        userRef.setPlayerObject(null);
     }
 }

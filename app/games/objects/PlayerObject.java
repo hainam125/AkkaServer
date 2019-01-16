@@ -25,6 +25,8 @@ public class PlayerObject {
     private boolean isDirty;
     private int hp;
     private float respawnTimeLeft;
+    private float fireRate = 3f;
+    private float timeNextFireLeft;
     private GameMap gameMap;
 
     public PlayerObject(GameMap map){
@@ -41,6 +43,23 @@ public class PlayerObject {
     public void decreaseHp(){
         isDirty = true;
         hp--;
+        if(isDeath()) {
+            reset();
+        }
+    }
+
+    private void shot(){
+        if(timeNextFireLeft <= 0f) {
+            timeNextFireLeft = 1f / fireRate;
+            Vector3 forward = transform.getForward();
+            gameMap.addMovingObject(new Projectile(
+                    forward,
+                    transform.position.add(forward.mul(0.80f)).add(new Vector3(0f, 0.2f, 0f)),
+                    new Vector3(0.25f, 0.25f, 0.35f),
+                    transform.rotation,
+                    this
+            ));
+        }
     }
 
     public int getHp(){
@@ -59,12 +78,13 @@ public class PlayerObject {
         return false;
     }
 
-    public void reset(){
+    private void reset(){
         isDirty = true;
         respawnTimeLeft = TotalRespawnTime;
     }
 
     private void respawn() {
+        timeNextFireLeft = 0f;
         transform.position = Vector3.zero;
         hp = MaxHp;
         isDirty = true;
@@ -73,11 +93,18 @@ public class PlayerObject {
 
     public void receiveCommand(Command command)
     {
-        commands.add(command);
+        if(KeyCode.isSpace(command.keyCode)) {
+            shot();
+        }
+        if(command.keyCode != KeyCode.Space.getValue()) {
+            commands.add(command);
+        }
     }
 
     public void updateGame(float deltaTime)
     {
+        if(timeNextFireLeft >= 0) timeNextFireLeft -= deltaTime;
+
         if(respawnTimeLeft > 0){
             respawnTimeLeft -= deltaTime;
             if(respawnTimeLeft <= 0) {
@@ -85,6 +112,7 @@ public class PlayerObject {
             }
             return;
         }
+
         while(commands.size() > 0) {
             handleCommand(commands.poll());
         }
