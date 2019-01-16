@@ -1,5 +1,6 @@
 package actors;
 
+import Reference.UserRef;
 import akka.actor.AbstractActor;
 import akka.actor.ActorRef;
 import akka.actor.Props;
@@ -65,7 +66,7 @@ public class WebSocketActor extends AbstractActor {
                 lobbyActor.tell(new GetRooms(userRef.getUser().getId(), request.id), ActorRef.noSender());
             }
             else if(request.type.equals(EnterRoom.class.getSimpleName())){
-                lobbyActor.tell(new JoinRoom(userRef, Json.fromJson(actualObj, CreateRoom.class).getName(), request.id, false), ActorRef.noSender());
+                lobbyActor.tell(new JoinRoom(userRef, Json.fromJson(actualObj, EnterRoom.class).getName(), request.id, false), ActorRef.noSender());
             }
             else if(request.type.equals(Command.class.getSimpleName())){
                 Command command = Json.fromJson(actualObj, Command.class);

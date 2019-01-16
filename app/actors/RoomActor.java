@@ -6,16 +6,14 @@ import akka.actor.Cancellable;
 import akka.actor.Props;
 import com.fasterxml.jackson.databind.JsonNode;
 import games.network.entity.*;
+import models.Room;
 import network.*;
 import games.*;
 import games.objects.PlayerObject;
-import games.objects.Projectile;
-import games.transform.Transform;
-import games.transform.Vector3;
 import messages.*;
 import network.data.*;
 import models.User;
-import models.UserRef;
+import Reference.UserRef;
 import play.libs.Json;
 
 import java.time.Duration;
@@ -30,19 +28,19 @@ public class RoomActor extends AbstractActor {
     private Map<UserRef, PlayerObject> objectMap;
     private GameMap gameMap;
     private Cancellable gameLoop;
-    private int maxPlayer;
+    private Room room;
 
-    public static Props props(ActorRef lobbyActor, int playerAmount) {
-        return Props.create(RoomActor.class, () -> new RoomActor(lobbyActor, playerAmount));
+    public static Props props(ActorRef lobbyActor, Room room) {
+        return Props.create(RoomActor.class, () -> new RoomActor(lobbyActor, room));
     }
 
-    public RoomActor(ActorRef lobbyActor, int playerAmount) {
+    public RoomActor(ActorRef lobbyActor, Room room) {
+        this.room = room;
         this.lobbyActor = lobbyActor;
         websockets = new HashMap<>();
         commandsSoFar = new HashMap<>();
         objectMap = new HashMap<>();
         gameMap = new GameMap();
-        maxPlayer = playerAmount;
     }
 
     @Override
@@ -61,6 +59,7 @@ public class RoomActor extends AbstractActor {
     public Receive createReceive() {
         return receiveBuilder().match(JoinRoom.class, data -> {
             UserRef userRef = data.getUserRef();
+
             userRef.setRoom(self());
             long userId = userRef.getUser().getId();
             websockets.put(userId, userRef.getOut());
@@ -70,6 +69,8 @@ public class RoomActor extends AbstractActor {
 
             SnapShot snapShot = gameMap.currentMapStatus();
             String snapShotString = Json.toJson(snapShot).toString();
+
+            room.addPlayer();
 
             //create and join room
             if(data.isCreated()){
@@ -110,7 +111,8 @@ public class RoomActor extends AbstractActor {
             objectMap.remove(userRef);
             gameMap.removePlayerObject(playerObject);
             websockets.remove(userId);
-            if(websockets.size() == 0) lobbyActor.tell(new RoomStatus(websockets.size()), getSelf());
+            room.removePlayer();
+            if(room.isEmpty()) lobbyActor.tell(new RoomStatus(room.getSize(), room.getName()), getSelf());
         }).build();
     }
 

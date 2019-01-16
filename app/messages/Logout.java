@@ -1,6 +1,6 @@
 package messages;
 
-import models.UserRef;
+import Reference.UserRef;
 
 public class Logout {
     private final UserRef userRef;

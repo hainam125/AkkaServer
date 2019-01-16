@@ -1,10 +1,12 @@
 package network.data;
 
-import java.util.Set;
+import models.Room;
+
+import java.util.ArrayList;
 
 public class RoomList {
-    public Set<String> rooms;
-    public RoomList(Set<String> rooms){
+    public ArrayList<Room> rooms;
+    public RoomList(ArrayList<Room> rooms){
         this.rooms = rooms;
     }
 }

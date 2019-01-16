@@ -1,7 +1,8 @@
-package models;
+package Reference;
 
 import akka.actor.ActorRef;
 import games.objects.PlayerObject;
+import models.User;
 
 public class UserRef {
     private ActorRef self;

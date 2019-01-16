@@ -1,7 +1,7 @@
 package messages;
 
 import network.data.Command;
-import models.UserRef;
+import Reference.UserRef;
 
 public class Send {
     private final Command command;
