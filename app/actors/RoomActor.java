@@ -30,17 +30,19 @@ public class RoomActor extends AbstractActor {
     private Map<UserRef, PlayerObject> objectMap;
     private GameMap gameMap;
     private Cancellable gameLoop;
+    private int maxPlayer;
 
-    public static Props props(ActorRef lobbyActor) {
-        return Props.create(RoomActor.class, () -> new RoomActor(lobbyActor));
+    public static Props props(ActorRef lobbyActor, int playerAmount) {
+        return Props.create(RoomActor.class, () -> new RoomActor(lobbyActor, playerAmount));
     }
 
-    public RoomActor(ActorRef lobbyActor) {
+    public RoomActor(ActorRef lobbyActor, int playerAmount) {
         this.lobbyActor = lobbyActor;
         websockets = new HashMap<>();
         commandsSoFar = new HashMap<>();
         objectMap = new HashMap<>();
         gameMap = new GameMap();
+        maxPlayer = playerAmount;
     }
 
     @Override
@@ -59,6 +61,7 @@ public class RoomActor extends AbstractActor {
     public Receive createReceive() {
         return receiveBuilder().match(JoinRoom.class, data -> {
             UserRef userRef = data.getUserRef();
+            userRef.setRoom(self());
             long userId = userRef.getUser().getId();
             websockets.put(userId, userRef.getOut());
 
@@ -68,10 +71,12 @@ public class RoomActor extends AbstractActor {
             SnapShot snapShot = gameMap.currentMapStatus();
             String snapShotString = Json.toJson(snapShot).toString();
 
+            //create and join room
             if(data.isCreated()){
                 Response response = new Response(data.getRequestId(), Json.toJson(new CreateRoom(data.getRoom(), playerObject.getId(), snapShotString, true)).toString(), CreateRoom.class.getSimpleName());
                 userRef.getOut().tell(Json.toJson(response), ActorRef.noSender());
             }
+            //join room only
             else {
                 Response broadcastResponse = new Response(-1, Json.toJson(new UserJoined(userRef.getUser(), playerObject.getId())).toString(), UserJoined.class.getSimpleName());
                 broadcast(Json.toJson(broadcastResponse), userId);

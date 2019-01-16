@@ -3,6 +3,7 @@ package actors;
 import akka.actor.AbstractActor;
 import akka.actor.ActorRef;
 import network.Response;
+import network.data.EnterRoom;
 import network.data.RoomList;
 import network.data.CreateRoom;
 import models.UserRef;
@@ -34,10 +35,9 @@ public class LobbyActor extends AbstractActor {
             if(rooms.containsKey(roomName)) {
                 Response response = new Response(data.getRequestId(), Json.toJson(new CreateRoom("", -1, "", false)).toString(), CreateRoom.class.getSimpleName());
                 userRef.getOut().tell(Json.toJson(response), ActorRef.noSender());
-
             }
             else {
-                ActorRef roomActorRef = getContext().actorOf(RoomActor.props(self()), roomName);
+                ActorRef roomActorRef = getContext().actorOf(RoomActor.props(self(), data.getPlayerAmount()), roomName);
                 rooms.put(roomName, roomActorRef);
                 self().tell(new JoinRoom(userRef, roomName, data.getRequestId(), true), ActorRef.noSender());
             }
@@ -47,10 +47,15 @@ public class LobbyActor extends AbstractActor {
             userRef.getOut().tell(Json.toJson(response), ActorRef.noSender());
         }).match(JoinRoom.class, data -> {
             String roomName = data.getRoom();
-            UserRef userRef = websockets.get(data.getUserRef().getUser().getId());
-            ActorRef roomActorRef = rooms.get(roomName);
-            userRef.setRoom(roomActorRef);
-            roomActorRef.tell(data, ActorRef.noSender());
+            if(rooms.containsKey(roomName)) {
+                ActorRef roomActorRef = rooms.get(roomName);
+                roomActorRef.tell(data, ActorRef.noSender());
+            }
+            else {
+                UserRef userRef = websockets.get(data.getUserRef().getUser().getId());
+                Response response = new Response(data.getRequestId(), Json.toJson(new EnterRoom("", -1, "", null, null)).toString(), CreateRoom.class.getSimpleName());
+                userRef.getOut().tell(Json.toJson(response), ActorRef.noSender());
+            }
         }).match(Logout.class, data -> {
             websockets.remove(data.getUserRef().getUser().getId());
         }).match(RoomStatus.class, data -> {

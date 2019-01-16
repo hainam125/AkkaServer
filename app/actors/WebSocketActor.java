@@ -57,7 +57,7 @@ public class WebSocketActor extends AbstractActor {
             }
             else if(request.type.equals(CreateRoom.class.getSimpleName())){
                 CreateRoom createRoom = Json.fromJson(actualObj, CreateRoom.class);
-                lobbyActor.tell(new NewRoom(createRoom.getName(), userRef.getUser().getId(), request.id), ActorRef.noSender());
+                lobbyActor.tell(new NewRoom(createRoom.getName(), userRef.getUser().getId(), request.id, createRoom.getNb()), ActorRef.noSender());
             }
             else if(request.type.equals(RoomList.class.getSimpleName())){
                 lobbyActor.tell(new GetRooms(userRef.getUser().getId(), request.id), ActorRef.noSender());

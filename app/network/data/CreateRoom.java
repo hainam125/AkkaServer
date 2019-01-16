@@ -2,6 +2,7 @@ package network.data;
 
 public class CreateRoom {
     private String name;
+    private int nb;
     private long objectId;
     private String snapShot;
     private boolean success;
@@ -29,5 +30,9 @@ public class CreateRoom {
 
     public boolean isSuccess() {
         return success;
+    }
+
+    public int getNb() {
+        return nb;
     }
 }

@@ -4,10 +4,12 @@ public class NewRoom {
     private final String roomName;
     private final long userId;
     private final long requestId;
-    public NewRoom(String roomName, long userId, long requestId) {
+    private final int playerAmount;
+    public NewRoom(String roomName, long userId, long requestId, int playerAmount) {
         this.roomName = roomName;
         this.userId = userId;
         this.requestId = requestId;
+        this.playerAmount = playerAmount;
     }
 
     public String getRoomName() {
@@ -20,5 +22,9 @@ public class NewRoom {
 
     public long getRequestId() {
         return requestId;
+    }
+
+    public int getPlayerAmount() {
+        return playerAmount;
     }
 }
